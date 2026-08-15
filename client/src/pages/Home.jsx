@@ -27,6 +27,7 @@ import MetadataEditorModal from '../components/modals/MetadataEditorModal';
 import ImportProgressModal from '../components/modals/ImportProgressModal';
 import ArtworkImage from '../components/common/ArtworkImage';
 import OneUpLogo from '../components/common/OneUpLogo';
+import { saveLocalSong, getLocalSongs, deleteLocalSong } from '../utils/indexedDbStorage';
 
 export default function Home() {
   const { currentSong, isPlaying, playSong, togglePlay } = useAudio();
@@ -46,10 +47,28 @@ export default function Home() {
 
   const fetchSongs = async () => {
     try {
-      const res = await songsAPI.getAll({ limit: 500 });
-      setSongs(res.data.songs || []);
+      let serverSongs = [];
+      try {
+        const res = await songsAPI.getAll({ limit: 500 });
+        serverSongs = res.data.songs || [];
+      } catch (e) {
+        console.warn('Server API offline or unavailable, checking local storage...');
+      }
+
+      // Load persistent songs from browser IndexedDB
+      const localSongs = await getLocalSongs();
+
+      // Merge avoiding duplicate IDs
+      const combined = [...localSongs];
+      serverSongs.forEach(s => {
+        if (!combined.some(c => c.id === s.id)) {
+          combined.push(s);
+        }
+      });
+
+      setSongs(combined);
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching songs:', err);
     } finally {
       setLoading(false);
     }
@@ -84,16 +103,23 @@ export default function Home() {
     }
 
     try {
-      // 1. Try uploading to the backend server
-      const res = await adminAPI.uploadFiles(formData);
-      setUploadMessage(`Successfully uploaded and indexed ${res.data.imported} song(s)!`);
-      fetchSongs();
-      setTimeout(() => setUploadMessage(null), 5000);
-    } catch (err) {
-      console.warn('Backend server unreachable, playing instantly with Browser Engine:', err);
-      
-      // 2. Instant Browser Audio Engine fallback (works even on static Vercel!)
-      const localNewSongs = validFiles.map((file, idx) => {
+      // 1. Try uploading to backend server if available
+      try {
+        const res = await adminAPI.uploadFiles(formData);
+        if (res.data && res.data.imported) {
+          setUploadMessage(`Successfully uploaded and indexed ${res.data.imported} song(s)!`);
+          await fetchSongs();
+          setTimeout(() => setUploadMessage(null), 5000);
+          return;
+        }
+      } catch (err) {
+        console.warn('Backend server offline, saving directly to persistent browser IndexedDB:', err);
+      }
+
+      // 2. Persistent Browser IndexedDB Storage (Preserves music permanently across page reloads!)
+      const newStoredSongs = [];
+      for (let idx = 0; idx < validFiles.length; idx++) {
+        const file = validFiles[idx];
         const rawName = file.name.replace(/\.[^/.]+$/, '');
         let artist = 'Local Artist';
         let title = rawName;
@@ -103,27 +129,33 @@ export default function Home() {
           title = parts.slice(1).join(' - ').trim();
         }
 
-        const blobUrl = URL.createObjectURL(file);
-        return {
-          id: `local-${Date.now()}-${idx}`,
+        const songMeta = {
+          id: `idb-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 7)}`,
           title: title || file.name,
           artist_name: artist,
-          album_title: 'Local Music Import',
+          album_title: 'Local Music Storage',
           genre_name: 'Local',
           language: 'Local',
           duration: 0,
-          blobUrl: blobUrl,
-          audioUrl: blobUrl,
           cover_path: null,
           is_liked: false
         };
-      });
 
-      setSongs(prev => [...localNewSongs, ...prev]);
-      setUploadMessage(`✨ Loaded ${localNewSongs.length} track(s) in browser player!`);
-      
-      if (localNewSongs[0]) {
-        playSong(localNewSongs[0]);
+        await saveLocalSong(songMeta, file);
+
+        const blobUrl = URL.createObjectURL(file);
+        newStoredSongs.push({
+          ...songMeta,
+          blobUrl,
+          audioUrl: blobUrl
+        });
+      }
+
+      setSongs(prev => [...newStoredSongs, ...prev]);
+      setUploadMessage(`💾 Stored & ready: ${newStoredSongs.length} song(s) saved permanently in your browser!`);
+
+      if (newStoredSongs[0]) {
+        playSong(newStoredSongs[0]);
       }
       setTimeout(() => setUploadMessage(null), 6000);
     } finally {
@@ -154,11 +186,12 @@ export default function Home() {
     }
   };
 
-  // Delete song
+  // Delete song (removes from server AND browser IndexedDB)
   const handleDeleteSong = async (id, title) => {
     if (window.confirm(`Delete "${title}" from your library?`)) {
       try {
-        await adminAPI.deleteSong(id);
+        await deleteLocalSong(id);
+        adminAPI.deleteSong(id).catch(() => {});
         setSongs(prev => prev.filter(s => s.id !== id));
       } catch (err) {
         alert('Failed to delete song: ' + err.message);
