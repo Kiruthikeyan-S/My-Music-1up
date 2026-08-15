@@ -15,12 +15,13 @@ import {
   Layers,
   Box,
   Sparkles,
-  Sun,
-  Flame
+  Settings as SettingsIcon
 } from 'lucide-react';
 import { useAudio } from '../../context/AudioContext';
+import { useSettings } from '../../context/SettingsContext';
 import CircularSpectrumCanvas from './CircularSpectrumCanvas';
 import HorizonSpectrumCanvas from './HorizonSpectrumCanvas';
+import SiriWaveCanvas from './SiriWaveCanvas';
 import ArtworkImage from '../common/ArtworkImage';
 import { extractColorsFromImage } from '../../utils/colorExtractor';
 
@@ -50,11 +51,14 @@ export default function FullScreenPlayerModal() {
     toggleLike
   } = useAudio();
 
+  const { defaultArtMode, currentThemeObj, visualizerStyle } = useSettings();
+
   // Artwork visual presentation mode: '3d' | 'circle' | 'float'
-  const [artMode, setArtMode] = useState('3d');
+  const [artMode, setArtMode] = useState(defaultArtMode || '3d');
   const [themeColors, setThemeColors] = useState({
-    primary: '#e5a93c',
-    secondary: '#f3c66f',
+    primary: currentThemeObj?.primary || '#e5a93c',
+    secondary: currentThemeObj?.secondary || '#f3c66f',
+    accent: currentThemeObj?.accent || '#ff8c00',
     glow: 'rgba(229, 169, 60, 0.6)',
     rgb: '229, 169, 60'
   });
@@ -63,15 +67,23 @@ export default function FullScreenPlayerModal() {
   const [isBlasted, setIsBlasted] = useState(false);
   const [blastParticles, setBlastParticles] = useState([]);
 
+  // Sync defaultArtMode if changed in Settings
+  useEffect(() => {
+    if (defaultArtMode) setArtMode(defaultArtMode);
+  }, [defaultArtMode]);
+
   // Extract vibrant theme color automatically whenever currentSong changes
   useEffect(() => {
     if (currentSong) {
       const coverUrl = currentSong.cover_path || currentSong.album_cover;
       extractColorsFromImage(coverUrl, (colors) => {
-        setThemeColors(colors);
+        setThemeColors({
+          ...colors,
+          accent: currentThemeObj?.accent || '#ff8c00'
+        });
       });
     }
-  }, [currentSong]);
+  }, [currentSong, currentThemeObj]);
 
   if (!isFullScreenPlayerOpen || !currentSong) return null;
 
@@ -108,7 +120,7 @@ export default function FullScreenPlayerModal() {
     <div
       className="fixed inset-0 z-50 bg-[#070605] text-white flex flex-col p-4 sm:p-6 overflow-y-auto animate-in fade-in slide-in-from-bottom duration-300 font-serif"
       style={{
-        background: `radial-gradient(ellipse at 50% 30%, rgba(${themeColors.rgb}, 0.32) 0%, rgba(20, 15, 10, 0.95) 55%, #070605 100%)`
+        background: `radial-gradient(ellipse at 50% 30%, rgba(${themeColors.rgb}, 0.35) 0%, rgba(18, 14, 10, 0.96) 55%, #050403 100%)`
       }}
     >
       {/* Top Header Bar with Glassmorphism */}
@@ -170,9 +182,9 @@ export default function FullScreenPlayerModal() {
             setIsFullScreenPlayerOpen(false);
             setIsQueueDrawerOpen(true);
           }}
-          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition hover:scale-110"
+          className="p-2.5 rounded-full bg-black/60 backdrop-blur-md border border-amber-500/30 hover:bg-white/10 transition hover:scale-110"
         >
-          <ListMusic className="w-5 h-5" />
+          <ListMusic className="w-5 h-5 text-amber-200" />
         </button>
       </div>
 
@@ -190,7 +202,7 @@ export default function FullScreenPlayerModal() {
         <div
           className="absolute w-80 h-80 sm:w-[460px] sm:h-[460px] rounded-full blur-3xl -z-10 animate-pulse-glow pointer-events-none transition-all duration-700"
           style={{
-            background: `radial-gradient(circle, ${themeColors.glow} 0%, rgba(${themeColors.rgb}, 0.15) 60%, transparent 100%)`
+            background: `radial-gradient(circle, ${themeColors.glow} 0%, rgba(${themeColors.rgb}, 0.18) 60%, transparent 100%)`
           }}
         />
 
@@ -277,8 +289,8 @@ export default function FullScreenPlayerModal() {
         </div>
       </div>
 
-      {/* Track Details, Scrubber & Horizon Visualizer Underneath the Line */}
-      <div className="max-w-md w-full mx-auto space-y-4">
+      {/* Track Details, Scrubber & Siri/Horizon Waveform Visualizer */}
+      <div className="max-w-md w-full mx-auto space-y-3.5">
         {/* Track Title & Artist */}
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-4">
@@ -320,14 +332,24 @@ export default function FullScreenPlayerModal() {
           </div>
         </div>
 
-        {/* 3. Horizon Mirrored Audio Waveform Visualizer (Underneath the line!) */}
-        <div className="w-full h-11 py-1 overflow-hidden">
-          <HorizonSpectrumCanvas
-            isPlaying={isPlaying}
-            primaryColor={themeColors.primary}
-            secondaryColor={themeColors.secondary}
-            height={44}
-          />
+        {/* 3. Futuristic Siri-Style Sine Wave or Horizon Visualizer (Underneath the line!) */}
+        <div className="w-full h-14 overflow-hidden rounded-2xl bg-black/40 border border-white/10 p-1 flex items-center justify-center">
+          {visualizerStyle === 'siri' ? (
+            <SiriWaveCanvas
+              isPlaying={isPlaying}
+              primaryColor={themeColors.primary || '#ffffff'}
+              secondaryColor={themeColors.secondary || '#38bdf8'}
+              accentColor={themeColors.accent || '#c084fc'}
+              height={50}
+            />
+          ) : (
+            <HorizonSpectrumCanvas
+              isPlaying={isPlaying}
+              primaryColor={themeColors.primary}
+              secondaryColor={themeColors.secondary}
+              height={44}
+            />
+          )}
         </div>
 
         {/* Primary Playback Controls */}
@@ -391,7 +413,7 @@ export default function FullScreenPlayerModal() {
         </div>
 
         {/* Volume & Speed Controls */}
-        <div className="flex items-center justify-between pt-3 border-t border-amber-500/20">
+        <div className="flex items-center justify-between pt-2 border-t border-amber-500/20">
           <div className="flex items-center gap-2.5 w-1/2">
             <button onClick={toggleMute} className="text-amber-200/70 hover:text-white">
               {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
