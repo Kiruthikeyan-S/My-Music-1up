@@ -6,8 +6,7 @@
     "dev": "node -e \"const { spawn } = require('child_process'); spawn('npm', ['start'], { cwd: './server', stdio: 'inherit', shell: true }); spawn('npm', ['run', 'dev'], { cwd: './client', stdio: 'inherit', shell: true });\"",
     "start": "npm --prefix server start",
     "seed": "npm --prefix server run seed",
-    "build": "cd client && npm install --include=dev && npx vite build",
-    "vercel-build": "cd client && npm install --include=dev && npx vite build",
+    "build": "npm --prefix client run build",
     "server": "npm --prefix server start",
     "client": "npm --prefix client run dev"
   },
