@@ -1,17 +1,6 @@
 import axios from 'axios';
 
-// Automatically detect production cloud backend if running on Firebase, Vercel, or custom domain
-const isCloudHosted = typeof window !== 'undefined' && (
-  window.location.hostname.includes('web.app') ||
-  window.location.hostname.includes('firebaseapp.com') ||
-  window.location.hostname.includes('vercel.app') ||
-  window.location.hostname.includes('trycloudflare.com')
-);
-
-export const API_BASE_URL = (
-  import.meta.env.VITE_API_URL ||
-  (isCloudHosted ? 'https://my-music-1up.onrender.com' : '')
-).replace(/\/+$/, '');
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
 const api = axios.create({
   baseURL: API_BASE_URL ? `${API_BASE_URL}/api` : '/api'

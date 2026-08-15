@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { initDb } from './database/db.js';
 
@@ -21,51 +20,21 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enable CORS for all origins (Vercel, Firebase, Localhost)
+// Enable CORS
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Range']
 }));
 
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ extended: true, limit: '100mb' }));
-
-// Ensure upload & cover storage directories exist
-const rootStoragePath = path.resolve(__dirname, '../../storage');
-const serverStoragePath = path.resolve(__dirname, '../storage');
-
-[
-  path.join(rootStoragePath, 'covers'),
-  path.join(rootStoragePath, 'music/uploads'),
-  path.join(serverStoragePath, 'covers'),
-  path.join(serverStoragePath, 'music/uploads')
-].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Serve static storage directory (covers, audio, icons)
+const rootStoragePath = path.resolve(__dirname, '../../storage');
+const serverStoragePath = path.resolve(__dirname, '../storage');
 app.use('/storage', express.static(rootStoragePath));
 app.use('/storage', express.static(serverStoragePath));
-
-// Root health check endpoint
-app.get('/', (req, res) => {
-  res.json({
-    status: 'ok',
-    service: '1UP Music Streaming Backend',
-    timestamp: new Date().toISOString()
-  });
-});
-
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    service: '1UP Music Platform',
-    timestamp: new Date().toISOString()
-  });
-});
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -78,12 +47,21 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Start Server binding to 0.0.0.0 for Cloud Hosting (Render / Railway / Containers)
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    service: 'Sonora Music Platform'
+  });
+});
+
+// Start Server
 async function start() {
   try {
     await initDb();
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🎵 1UP Music Server running on port ${PORT} (0.0.0.0)`);
+    app.listen(PORT, () => {
+      console.log(`🎵 Sonora Server running on http://localhost:${PORT}`);
     });
   } catch (err) {
     console.error('Failed to start server:', err);

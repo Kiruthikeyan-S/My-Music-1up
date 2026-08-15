@@ -1,11 +1,10 @@
 {
-  "name": "1up-music-platform",
+  "name": "sonora-music-platform",
   "version": "1.0.0",
-  "description": "1UP Music Library & Streaming Platform",
+  "description": "Sonora Music Library & High-Fidelity Streaming Platform",
   "scripts": {
     "dev": "node -e \"const { spawn } = require('child_process'); spawn('npm', ['start'], { cwd: './server', stdio: 'inherit', shell: true }); spawn('npm', ['run', 'dev'], { cwd: './client', stdio: 'inherit', shell: true });\"",
-    "start": "npm --prefix server start",
-    "tunnel": ".\\cloudflared.exe tunnel --url http://localhost:3000",
+    "start": "node -e \"const { spawn } = require('child_process'); spawn('npm', ['start'], { cwd: './server', stdio: 'inherit', shell: true }); spawn('npm', ['run', 'dev'], { cwd: './client', stdio: 'inherit', shell: true });\"",
     "seed": "npm --prefix server run seed",
     "build": "npm --prefix client run build",
     "server": "npm --prefix server start",
@@ -17,6 +16,6 @@
     "music-metadata",
     "audio-streamer"
   ],
-  "author": "1UP",
+  "author": "Sonora",
   "license": "MIT"
 }

@@ -1,39 +1,31 @@
-# Node dependencies
+# Dependencies
 node_modules/
-**/node_modules/
-client/node_modules/
-server/node_modules/
+*/node_modules/
 
-# Build outputs
+# Production Build Outputs (Vercel builds directly from source)
 dist/
-**/dist/
 client/dist/
+build/
 
-# Environment and secrets
+# Executables & Binaries
+*.exe
+cloudflared*
+
+# Firebase & Deployment Caches
+.firebase/
+.firebaserc
+firebase.json
+
+# Environment Variables & Logs
 .env
 .env.local
 .env.*.local
-
-# Cloudflare tunnel executable
-cloudflared.exe
-*.exe
-
-# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
-*.log
-logs/
 
-# OS / Editor files
+# Temporary files & OS junk
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Temp cache
-.npm/
-.eslintcache
-.firebase/
+y/
+.cache/
