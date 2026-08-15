@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+
 const api = axios.create({
-  baseURL: '/api'
+  baseURL: API_BASE_URL ? `${API_BASE_URL}/api` : '/api'
 });
 
 api.interceptors.request.use(config => {
@@ -22,7 +24,7 @@ export const songsAPI = {
   getAll: (params) => api.get('/songs', { params }),
   getById: (id) => api.get(`/songs/${id}`),
   recordPlay: (id, durationListened) => api.post(`/songs/${id}/play`, { duration_listened: durationListened }),
-  getStreamUrl: (id) => `/api/songs/${id}/stream`
+  getStreamUrl: (id) => `${API_BASE_URL}/api/songs/${id}/stream`
 };
 
 export const artistsAPI = {

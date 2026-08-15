@@ -33,9 +33,11 @@ export default function ArtworkImage({
   const gradient = GRADIENT_PALETTES[getGradientIndex(fallbackTitle || alt)];
 
   // Clean local API image paths if needed
+  const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
   let safeSrc = src;
-  if (safeSrc && !safeSrc.startsWith('http') && !safeSrc.startsWith('data:') && !safeSrc.startsWith('/')) {
-    safeSrc = `/${safeSrc}`;
+  if (safeSrc && !safeSrc.startsWith('http') && !safeSrc.startsWith('data:')) {
+    if (!safeSrc.startsWith('/')) safeSrc = `/${safeSrc}`;
+    if (apiBase) safeSrc = `${apiBase}${safeSrc}`;
   }
 
   if (!safeSrc || hasError) {
