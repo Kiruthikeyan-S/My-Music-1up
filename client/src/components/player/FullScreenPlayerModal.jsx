@@ -111,13 +111,16 @@ export default function FullScreenPlayerModal() {
         background: `radial-gradient(ellipse at 50% 30%, rgba(${themeColors.rgb}, 0.32) 0%, rgba(20, 15, 10, 0.95) 55%, #070605 100%)`
       }}
     >
-      {/* Top Header Bar */}
-      <div className="flex items-center justify-between">
+      {/* Top Header Bar with Glassmorphism */}
+      <div className="flex items-center justify-between pb-2">
         <button
           onClick={() => setIsFullScreenPlayerOpen(false)}
-          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition hover:scale-110"
+          className="px-3.5 py-2 rounded-2xl bg-black/60 backdrop-blur-md border border-amber-500/30 hover:border-amber-500/60 hover:bg-white/10 text-amber-200 hover:text-white transition flex items-center gap-1.5 text-xs font-bold shadow-lg group hover:scale-105 active:scale-95"
+          title="Minimize player and return to music library"
         >
-          <ChevronDown className="w-6 h-6" />
+          <ChevronDown className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+          <span className="hidden sm:inline">Back to Library</span>
+          <span className="sm:hidden">Back</span>
         </button>
 
         {/* Artwork Mode Switcher Chips (3D / Circular Vinyl / Floating Card) */}

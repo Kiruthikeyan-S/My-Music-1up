@@ -28,6 +28,7 @@ import ImportProgressModal from '../components/modals/ImportProgressModal';
 import ArtworkImage from '../components/common/ArtworkImage';
 import OneUpLogo from '../components/common/OneUpLogo';
 import { saveLocalSong, getLocalSongs, deleteLocalSong } from '../utils/indexedDbStorage';
+import { parseAudioFileMetadata } from '../utils/id3Extractor';
 
 export default function Home() {
   const { currentSong, isPlaying, playSong, togglePlay } = useAudio();
@@ -116,28 +117,24 @@ export default function Home() {
         console.warn('Backend server offline, saving directly to persistent browser IndexedDB:', err);
       }
 
-      // 2. Persistent Browser IndexedDB Storage (Preserves music permanently across page reloads!)
+      // 2. Persistent Browser IndexedDB Storage (Preserves music & album artwork permanently across page reloads!)
       const newStoredSongs = [];
       for (let idx = 0; idx < validFiles.length; idx++) {
         const file = validFiles[idx];
-        const rawName = file.name.replace(/\.[^/.]+$/, '');
-        let artist = 'Local Artist';
-        let title = rawName;
-        if (rawName.includes(' - ')) {
-          const parts = rawName.split(' - ');
-          artist = parts[0].trim();
-          title = parts.slice(1).join(' - ').trim();
-        }
+        
+        // Extract embedded ID3 tags and album cover art from MP3 bytes!
+        const parsed = await parseAudioFileMetadata(file);
 
         const songMeta = {
           id: `idb-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 7)}`,
-          title: title || file.name,
-          artist_name: artist,
-          album_title: 'Local Music Storage',
+          title: parsed.title || file.name,
+          artist_name: parsed.artist || 'Local Artist',
+          album_title: parsed.album || 'Local Music Storage',
           genre_name: 'Local',
           language: 'Local',
           duration: 0,
-          cover_path: null,
+          cover_path: parsed.coverDataUrl || null,
+          album_cover: parsed.coverDataUrl || null,
           is_liked: false
         };
 
