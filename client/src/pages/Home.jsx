@@ -66,30 +66,66 @@ export default function Home() {
     setIsUploading(true);
     setUploadMessage(null);
 
+    const validFiles = [];
     const formData = new FormData();
-    let count = 0;
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
       const ext = file.name.split('.').pop().toLowerCase();
       if (['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'opus', 'wma'].includes(ext)) {
         formData.append('audioFiles', file);
-        count++;
+        validFiles.push(file);
       }
     }
 
-    if (count === 0) {
+    if (validFiles.length === 0) {
       alert('Please select supported audio files (.mp3, .wav, .flac, .m4a, .aac, .ogg)');
       setIsUploading(false);
       return;
     }
 
     try {
+      // 1. Try uploading to the backend server
       const res = await adminAPI.uploadFiles(formData);
       setUploadMessage(`Successfully uploaded and indexed ${res.data.imported} song(s)!`);
       fetchSongs();
       setTimeout(() => setUploadMessage(null), 5000);
     } catch (err) {
-      alert('Upload failed: ' + (err.response?.data?.error || err.message));
+      console.warn('Backend server unreachable, playing instantly with Browser Engine:', err);
+      
+      // 2. Instant Browser Audio Engine fallback (works even on static Vercel!)
+      const localNewSongs = validFiles.map((file, idx) => {
+        const rawName = file.name.replace(/\.[^/.]+$/, '');
+        let artist = 'Local Artist';
+        let title = rawName;
+        if (rawName.includes(' - ')) {
+          const parts = rawName.split(' - ');
+          artist = parts[0].trim();
+          title = parts.slice(1).join(' - ').trim();
+        }
+
+        const blobUrl = URL.createObjectURL(file);
+        return {
+          id: `local-${Date.now()}-${idx}`,
+          title: title || file.name,
+          artist_name: artist,
+          album_title: 'Local Music Import',
+          genre_name: 'Local',
+          language: 'Local',
+          duration: 0,
+          blobUrl: blobUrl,
+          audioUrl: blobUrl,
+          cover_path: null,
+          is_liked: false
+        };
+      });
+
+      setSongs(prev => [...localNewSongs, ...prev]);
+      setUploadMessage(`✨ Loaded ${localNewSongs.length} track(s) in browser player!`);
+      
+      if (localNewSongs[0]) {
+        playSong(localNewSongs[0]);
+      }
+      setTimeout(() => setUploadMessage(null), 6000);
     } finally {
       setIsUploading(false);
     }
