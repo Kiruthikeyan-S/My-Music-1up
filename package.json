@@ -1,0 +1,21 @@
+{
+  "name": "sonora-music-platform",
+  "version": "1.0.0",
+  "description": "Sonora Music Library & High-Fidelity Streaming Platform",
+  "scripts": {
+    "dev": "node -e \"const { spawn } = require('child_process'); spawn('npm', ['start'], { cwd: './server', stdio: 'inherit', shell: true }); spawn('npm', ['run', 'dev'], { cwd: './client', stdio: 'inherit', shell: true });\"",
+    "start": "node -e \"const { spawn } = require('child_process'); spawn('npm', ['start'], { cwd: './server', stdio: 'inherit', shell: true }); spawn('npm', ['run', 'dev'], { cwd: './client', stdio: 'inherit', shell: true });\"",
+    "seed": "npm --prefix server run seed",
+    "build": "npm --prefix client run build",
+    "server": "npm --prefix server start",
+    "client": "npm --prefix client run dev"
+  },
+  "keywords": [
+    "music-player",
+    "streaming",
+    "music-metadata",
+    "audio-streamer"
+  ],
+  "author": "Sonora",
+  "license": "MIT"
+}

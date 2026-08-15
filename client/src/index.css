@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    border-color: #2a2015;
+  }
+  body {
+    background-color: #070605;
+    color: #f8f6f0;
+    font-family: "Times New Roman", Times, Georgia, serif !important;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Glassmorphism & Custom Surfaces with Warm Horizon Golden Accents */
+.glass-panel {
+  background: rgba(18, 14, 10, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(229, 169, 60, 0.15);
+}
+
+.glass-nav {
+  background: rgba(12, 9, 6, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(229, 169, 60, 0.15);
+}
+
+.glass-card {
+  background: rgba(22, 17, 12, 0.7);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(229, 169, 60, 0.12);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: rgba(35, 27, 18, 0.95);
+  border-color: rgba(229, 169, 60, 0.6);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 16px 40px -10px rgba(229, 169, 60, 0.35);
+}
+
+/* Slow, Silky-Smooth Rhythmic Beat Up-and-Down Motion (Relaxed & Graceful) */
+@keyframes rhythmBounceSlow {
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  30% {
+    transform: translateY(-16px) scale(1.025);
+  }
+  50% {
+    transform: translateY(0px) scale(1);
+  }
+  75% {
+    transform: translateY(-8px) scale(1.01);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+}
+
+.animate-rhythm-bounce {
+  animation: rhythmBounceSlow 4.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Gentle Resting Floating Animation */
+@keyframes floatAnimationSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: floatAnimationSlow 5.5s ease-in-out infinite;
+}
+
+/* 3D Holographic Perspective Slow Float with Gentle Tilt */
+@keyframes float3DBeatSlow {
+  0% {
+    transform: perspective(1000px) rotateX(8deg) rotateY(-5deg) translateY(0px) scale(1);
+  }
+  30% {
+    transform: perspective(1000px) rotateX(4deg) rotateY(3deg) translateY(-18px) scale(1.03);
+  }
+  50% {
+    transform: perspective(1000px) rotateX(7deg) rotateY(6deg) translateY(0px) scale(1);
+  }
+  75% {
+    transform: perspective(1000px) rotateX(10deg) rotateY(-3deg) translateY(-9px) scale(1.015);
+  }
+  100% {
+    transform: perspective(1000px) rotateX(8deg) rotateY(-5deg) translateY(0px) scale(1);
+  }
+}
+
+.animate-3d-beat {
+  animation: float3DBeatSlow 5.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transform-style: preserve-3d;
+}
+
+/* Dynamic Pulsing Golden Sunset Glow Rings */
+@keyframes pulseGlowSlow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlowSlow 4.5s ease-in-out infinite;
+}
+
+/* Sunset Sound Wave Ripple Rings */
+@keyframes rippleExpandSlow {
+  0% {
+    transform: scale(0.88);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.animate-ripple-1 {
+  animation: rippleExpandSlow 4.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+.animate-ripple-2 {
+  animation: rippleExpandSlow 4.2s cubic-bezier(0, 0.2, 0.8, 1) infinite 2.1s;
+}
+
+/* Rotating Vinyl Keyframe (Smooth & Slow) */
+@keyframes spinSlowSmooth {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spinSlowSmooth 18s linear infinite;
+}
+
+/* Exploding / Blast Separator Particles on Touch */
+@keyframes blastOut {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0);
+    opacity: 0;
+  }
+}
+
+.animate-blast-particle {
+  animation: blastOut 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+/* Custom Golden Scrubber */
+input[type="range"] {
+  accent-color: #e5a93c;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(229, 169, 60, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(229, 169, 60, 0.5);
+}
