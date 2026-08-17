@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
@@ -9,6 +9,7 @@ import { useAudio } from '../../context/AudioContext';
 
 export default function Layout() {
   const { currentSong } = useAudio();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col relative overflow-x-hidden">
@@ -20,19 +21,16 @@ export default function Layout() {
       {/* Subtle Atmospheric Gradient Dark Veil */}
       <div className="fixed inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/90 -z-20 pointer-events-none" />
 
-      {/* Top Navbar */}
-      <Navbar />
+      {/* Top Navbar with Menu Toggle */}
+      <Navbar onOpenMenu={() => setIsMenuOpen(true)} />
 
-      {/* Main Body with Sidebar + Content */}
-      <div className="flex-1 flex max-w-[1600px] w-full mx-auto">
-        {/* Left Sidebar Menu */}
-        <Sidebar />
+      {/* Slide-out Menu Drawer (Opens only when Menu is clicked) */}
+      <Sidebar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
-        {/* Content View */}
-        <main className={`flex-1 p-4 sm:p-6 md:p-8 min-w-0 ${currentSong ? 'pb-36' : 'pb-16'}`}>
-          <Outlet />
-        </main>
-      </div>
+      {/* Full-width Main Content Area */}
+      <main className={`flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 md:p-8 min-w-0 ${currentSong ? 'pb-36' : 'pb-16'}`}>
+        <Outlet />
+      </main>
 
       {/* Persistent Audio Player */}
       <AudioPlayer />
