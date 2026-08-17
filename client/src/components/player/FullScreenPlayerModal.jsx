@@ -123,69 +123,29 @@ export default function FullScreenPlayerModal() {
         background: `radial-gradient(ellipse at 50% 30%, rgba(${themeColors.rgb}, 0.35) 0%, rgba(18, 14, 10, 0.96) 55%, #050403 100%)`
       }}
     >
-      {/* Top Header Bar with Glassmorphism */}
+      {/* Top Header Bar with Glassmorphism (Clean) */}
       <div className="flex items-center justify-between pb-2">
         <button
           onClick={() => setIsFullScreenPlayerOpen(false)}
-          className="px-3.5 py-2 rounded-2xl bg-black/60 backdrop-blur-md border border-amber-500/30 hover:border-amber-500/60 hover:bg-white/10 text-amber-200 hover:text-white transition flex items-center gap-1.5 text-xs font-bold shadow-lg group hover:scale-105 active:scale-95"
+          className="px-4 py-2 rounded-2xl bg-black/60 backdrop-blur-md border border-amber-500/30 hover:border-amber-500/60 hover:bg-white/10 text-amber-200 hover:text-white transition flex items-center gap-2 text-xs font-bold shadow-lg group hover:scale-105 active:scale-95"
           title="Minimize player and return to music library"
         >
           <ChevronDown className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
-          <span className="hidden sm:inline">Back to Library</span>
-          <span className="sm:hidden">Back</span>
+          <span>Back to Library</span>
         </button>
 
-        {/* Artwork Mode Switcher Chips (3D / Circular Vinyl / Floating Card) */}
-        <div className="flex items-center bg-black/60 backdrop-blur-md p-1 rounded-2xl border border-amber-500/25 shadow-2xl">
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setArtMode('3d')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-              artMode === '3d'
-                ? 'bg-amber-400 text-dark-950 shadow-lg font-black'
-                : 'text-amber-200/70 hover:text-white'
-            }`}
-            title="3D Beat Hologram"
+            onClick={() => {
+              setIsFullScreenPlayerOpen(false);
+              setIsQueueDrawerOpen(true);
+            }}
+            className="p-2.5 rounded-full bg-black/60 backdrop-blur-md border border-amber-500/30 hover:bg-white/10 transition hover:scale-110"
+            title="Open Queue"
           >
-            <Box className="w-3.5 h-3.5" />
-            <span>3D Tilt</span>
-          </button>
-
-          <button
-            onClick={() => setArtMode('circle')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-              artMode === 'circle'
-                ? 'bg-amber-400 text-dark-950 shadow-lg font-black'
-                : 'text-amber-200/70 hover:text-white'
-            }`}
-            title="Spinning Vinyl Record"
-          >
-            <Disc className="w-3.5 h-3.5" />
-            <span>Vinyl Circle</span>
-          </button>
-
-          <button
-            onClick={() => setArtMode('float')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-              artMode === 'float'
-                ? 'bg-amber-400 text-dark-950 shadow-lg font-black'
-                : 'text-amber-200/70 hover:text-white'
-            }`}
-            title="Floating Beat Card"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Floating</span>
+            <ListMusic className="w-5 h-5 text-amber-200" />
           </button>
         </div>
-
-        <button
-          onClick={() => {
-            setIsFullScreenPlayerOpen(false);
-            setIsQueueDrawerOpen(true);
-          }}
-          className="p-2.5 rounded-full bg-black/60 backdrop-blur-md border border-amber-500/30 hover:bg-white/10 transition hover:scale-110"
-        >
-          <ListMusic className="w-5 h-5 text-amber-200" />
-        </button>
       </div>
 
       {/* Main Interactive Stage: Circular Spectrum + Slow Smooth Beat Bouncing Plate */}

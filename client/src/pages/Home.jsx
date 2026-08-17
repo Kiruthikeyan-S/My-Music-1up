@@ -237,98 +237,53 @@ export default function Home() {
   const albumsList = Object.values(albumsMap);
 
   return (
-    <div className="space-y-8">
-      {/* 1. UPLOAD & LOCAL FOLDER DROPZONE BANNER */}
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`relative rounded-3xl p-6 sm:p-8 border-2 border-dashed transition-all duration-300 ${
-          isDragging
-            ? 'border-brand-400 bg-brand-500/20 scale-[1.01]'
-            : 'border-brand-500/30 bg-gradient-to-r from-dark-900 via-dark-850 to-dark-900 hover:border-brand-500/60 shadow-2xl'
-        }`}
-      >
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-5 text-center md:text-left">
-            <div className="p-2 rounded-2xl bg-black/60 border border-emerald-500/40 flex items-center justify-center shadow-[0_0_25px_rgba(0,230,0,0.35)] flex-shrink-0 animate-float">
-              <OneUpLogo className="h-12 w-auto" />
-            </div>
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-wide font-serif flex items-center gap-2.5">
-                <span>1UP</span>
-                <span className="text-amber-400 font-sans text-xl">—</span>
-                <span className="text-amber-300 font-serif">Music Vault</span>
-              </h2>
-              <p className="text-xs sm:text-sm text-amber-100/80 mt-1 max-w-xl italic font-serif">
-                Drag and drop MP3, WAV, FLAC, M4A, or AAC songs & folders here. Cover art & metadata are parsed automatically!
-              </p>
-            </div>
-          </div>
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className="space-y-6"
+    >
+      {/* Hidden File / Folder Inputs */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept=".mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.wma,audio/*"
+        className="hidden"
+        onChange={(e) => handleUploadFiles(e.target.files)}
+      />
+      <input
+        ref={folderInputRef}
+        type="file"
+        webkitdirectory="true"
+        directory="true"
+        multiple
+        className="hidden"
+        onChange={(e) => handleUploadFiles(e.target.files)}
+      />
 
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="px-5 py-3 rounded-2xl bg-brand-500 text-white font-bold text-xs shadow-glow-brand hover:scale-105 active:scale-95 transition flex items-center gap-2 disabled:opacity-50"
-            >
-              <FileAudio className="w-4 h-4" />
-              Select Audio Files
-            </button>
-
-            <button
-              onClick={() => folderInputRef.current?.click()}
-              disabled={isUploading}
-              className="px-5 py-3 rounded-2xl bg-cyan-500 text-dark-950 font-black text-xs shadow-glow-cyan hover:scale-105 active:scale-95 transition flex items-center gap-2 disabled:opacity-50"
-            >
-              <FolderPlus className="w-4 h-4" />
-              Select Entire Folder
-            </button>
-
-            <button
-              onClick={() => setIsImportModalOpen(true)}
-              className="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 font-semibold text-xs transition flex items-center gap-1.5"
-            >
-              <HardDrive className="w-4 h-4 text-purple-400" />
-              Scan Disk Path
-            </button>
-          </div>
+      {/* Drag & Drop Visual Drop Overlay when dragging */}
+      {isDragging && (
+        <div className="p-8 rounded-3xl border-2 border-dashed border-amber-400 bg-amber-500/20 text-center animate-pulse">
+          <UploadCloud className="w-12 h-12 text-amber-400 mx-auto mb-2" />
+          <h3 className="text-xl font-bold text-white">Drop your music files here to add to 1UP!</h3>
         </div>
+      )}
 
-        {/* Hidden Inputs */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept=".mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.wma,audio/*"
-          className="hidden"
-          onChange={(e) => handleUploadFiles(e.target.files)}
-        />
-        <input
-          ref={folderInputRef}
-          type="file"
-          webkitdirectory="true"
-          directory="true"
-          multiple
-          className="hidden"
-          onChange={(e) => handleUploadFiles(e.target.files)}
-        />
+      {/* Upload Status Banners */}
+      {isUploading && (
+        <div className="p-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-xs text-amber-200 flex items-center gap-2 animate-pulse">
+          <div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+          Importing and parsing audio tags...
+        </div>
+      )}
 
-        {/* Upload Status Banner */}
-        {isUploading && (
-          <div className="mt-4 p-3 rounded-2xl bg-brand-500/10 border border-brand-500/30 text-xs text-brand-300 flex items-center gap-2 animate-pulse">
-            <div className="w-4 h-4 border-2 border-brand-400 border-t-transparent rounded-full animate-spin" />
-            Uploading and parsing audio tags...
-          </div>
-        )}
-
-        {uploadMessage && (
-          <div className="mt-4 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4" />
-            {uploadMessage}
-          </div>
-        )}
-      </div>
+      {uploadMessage && (
+        <div className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-xs text-emerald-300 flex items-center gap-2 animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4" />
+          {uploadMessage}
+        </div>
+      )}
 
       {/* 2. LIBRARY CONTROLS, SEARCH & FILTER TABS */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
