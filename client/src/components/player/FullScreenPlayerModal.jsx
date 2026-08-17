@@ -26,7 +26,7 @@ import HorizonSpectrumCanvas from './HorizonSpectrumCanvas';
 import SiriWaveCanvas from './SiriWaveCanvas';
 import ArtworkImage from '../common/ArtworkImage';
 import { extractColorsFromImage } from '../../utils/colorExtractor';
-import { parseLrcLyrics, fetchOnlineLyrics } from '../../utils/lyricsHelper';
+import { parseLrcLyrics, fetchOnlineLyrics, generateTanglishLyrics } from '../../utils/lyricsHelper';
 
 export default function FullScreenPlayerModal() {
   const {
@@ -246,17 +246,34 @@ export default function FullScreenPlayerModal() {
       {showLyrics ? (
         /* ================= 1. SYNCHRONIZED GLOWING LYRICS VIEW ================= */
         <div className="flex-1 flex flex-col items-center justify-center my-3 max-w-2xl w-full mx-auto relative overflow-hidden">
-          {/* Custom Lyrics Edit Bar */}
-          <div className="w-full flex items-center justify-between px-2 pb-2">
-            <span className="text-xs text-amber-200/60 font-serif italic">
-              {loadingLyrics ? 'Fetching live synchronized lyrics...' : 'Tap any line to jump directly to that beat!'}
-            </span>
+          {/* Custom Lyrics Edit & Tanglish Generator Bar */}
+          <div className="w-full flex flex-wrap items-center justify-between gap-2 px-2 pb-2">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const tanglish = generateTanglishLyrics(currentSong.title, currentSong.artist_name, duration || 210);
+                  setRawLyricsText(tanglish);
+                  setLyricsLines(parseLrcLyrics(tanglish, duration || 210));
+                  localStorage.setItem(`1up_lyrics_${currentSong.id}`, tanglish);
+                }}
+                className="text-xs font-bold text-dark-950 bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 px-3 py-1.5 rounded-xl shadow-glow-brand transition flex items-center gap-1.5"
+                title="Auto-Generate Tamil Lyrics in English Script (Tanglish)"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>✨ Auto-Generate Tanglish</span>
+              </button>
+
+              <span className="text-[11px] text-amber-200/60 font-serif italic hidden sm:inline">
+                {loadingLyrics ? 'Loading lyrics...' : 'Tap any line to seek!'}
+              </span>
+            </div>
+
             <button
               onClick={() => setIsEditingLyrics(prev => !prev)}
-              className="text-xs font-bold text-amber-300 hover:text-white flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/40 border border-white/10"
+              className="text-xs font-bold text-amber-300 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/50 border border-white/15"
             >
               <Edit3 className="w-3.5 h-3.5" />
-              <span>{isEditingLyrics ? 'Close Editor' : 'Edit / Paste Lyrics'}</span>
+              <span>{isEditingLyrics ? 'Close Editor' : 'Edit Lyrics'}</span>
             </button>
           </div>
 
