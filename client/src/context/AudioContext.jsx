@@ -120,14 +120,11 @@ export function AudioProvider({ children }) {
       }
     }
 
-    let isSongLiked = song.is_liked;
-    try {
-      const savedLiked = JSON.parse(localStorage.getItem('1up_liked_songs') || '[]');
-      if (savedLiked.includes(song.id)) isSongLiked = 1;
-    } catch {}
+    const likedSet = new Set(JSON.parse(localStorage.getItem('1up_liked_ids') || '[]'));
+    const isLiked = likedSet.has(song.id) || Boolean(song.is_liked);
+    const hydratedSong = { ...song, is_liked: isLiked };
 
-    const songWithLiked = { ...song, is_liked: isSongLiked ? 1 : 0 };
-    setCurrentSong(songWithLiked);
+    setCurrentSong(hydratedSong);
     setIsLoadingAudio(true);
     setAudioError(null);
 
@@ -303,41 +300,40 @@ export function AudioProvider({ children }) {
     }
   };
 
-  // Like Song helper (Works 100% offline with localStorage & syncs with backend if logged in)
+  // Like Song helper (Persistent in LocalStorage + Server)
   const toggleLike = async (songId) => {
-    if (!songId) return false;
-
-    let savedLiked = [];
     try {
-      savedLiked = JSON.parse(localStorage.getItem('1up_liked_songs') || '[]');
-    } catch {}
+      const likedSet = new Set(JSON.parse(localStorage.getItem('1up_liked_ids') || '[]'));
+      const isCurrentlyLiked = likedSet.has(songId) || (currentSong?.id === songId && Boolean(currentSong?.is_liked));
+      const nextLiked = !isCurrentlyLiked;
 
-    const alreadyLiked = savedLiked.includes(songId);
-    let isLiked = !alreadyLiked;
+      if (nextLiked) {
+        likedSet.add(songId);
+      } else {
+        likedSet.delete(songId);
+      }
+      localStorage.setItem('1up_liked_ids', JSON.stringify([...likedSet]));
 
-    if (alreadyLiked) {
-      savedLiked = savedLiked.filter(id => id !== songId);
-    } else {
-      savedLiked.push(songId);
+      // Update current song if matching
+      if (currentSong && currentSong.id === songId) {
+        setCurrentSong(prev => ({ ...prev, is_liked: nextLiked }));
+      }
+
+      // Update queue
+      setQueue(prev =>
+        prev.map(s => (s.id === songId ? { ...s, is_liked: nextLiked } : s))
+      );
+
+      // Sync with server if logged in
+      if (user) {
+        libraryAPI.toggleLike(songId).catch(() => {});
+      }
+
+      return nextLiked;
+    } catch (err) {
+      console.error('Failed to toggle like:', err);
+      return false;
     }
-    localStorage.setItem('1up_liked_songs', JSON.stringify(savedLiked));
-
-    // Update current song if matching
-    if (currentSong && currentSong.id === songId) {
-      setCurrentSong(prev => ({ ...prev, is_liked: isLiked ? 1 : 0 }));
-    }
-
-    // Update queue
-    setQueue(prev =>
-      prev.map(s => (s.id === songId ? { ...s, is_liked: isLiked ? 1 : 0 } : s))
-    );
-
-    // Sync to backend if logged in
-    if (user) {
-      libraryAPI.toggleLike(songId).catch(() => {});
-    }
-
-    return isLiked;
   };
 
   return (
