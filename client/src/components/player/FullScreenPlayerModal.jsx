@@ -17,7 +17,8 @@ import {
   Mic2,
   X,
   Share2,
-  Sparkles
+  Sparkles,
+  Info
 } from 'lucide-react';
 import { useAudio } from '../../context/AudioContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -83,6 +84,16 @@ export default function FullScreenPlayerModal() {
     if (defaultArtMode) setArtMode(defaultArtMode);
   }, [defaultArtMode]);
 
+  // Listen for custom event to open lyrics
+  useEffect(() => {
+    const handleOpenLyrics = () => {
+      setShowLyrics(true);
+      setIsFullScreenPlayerOpen(true);
+    };
+    window.addEventListener('1up_open_lyrics', handleOpenLyrics);
+    return () => window.removeEventListener('1up_open_lyrics', handleOpenLyrics);
+  }, [setIsFullScreenPlayerOpen]);
+
   // Load / Fetch lyrics for currentSong
   useEffect(() => {
     if (!currentSong) return;
@@ -123,7 +134,6 @@ export default function FullScreenPlayerModal() {
           setRawLyricsText(onlineLyrics);
           setLyricsLines(parseLrcLyrics(onlineLyrics, duration || 210));
         } else {
-          // Generate fallback dynamic synced lyrics
           const fallback = generateTanglishLyrics(currentSong.title, currentSong.artist_name, duration || 210);
           setRawLyricsText(fallback);
           setLyricsLines(parseLrcLyrics(fallback, duration || 210));
@@ -136,7 +146,7 @@ export default function FullScreenPlayerModal() {
     return () => { isMounted = false; };
   }, [currentSong, duration]);
 
-  // Auto-scroll active lyric into view
+  // Auto-scroll active lyric into view smoothly
   useEffect(() => {
     if (showLyrics && activeLyricRef.current) {
       activeLyricRef.current.scrollIntoView({
@@ -176,7 +186,7 @@ export default function FullScreenPlayerModal() {
     return `-${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  // Find active lyric index based on current playback progress
+  // Find active lyric index
   let activeIndex = -1;
   for (let i = 0; i < lyricsLines.length; i++) {
     if (progress >= lyricsLines[i].time) {
@@ -186,7 +196,7 @@ export default function FullScreenPlayerModal() {
     }
   }
 
-  // Trigger Blast Particle Scatter on Touch/PointerDown
+  // Trigger Blast Particle Scatter
   const triggerBlast = () => {
     setIsBlasted(true);
     const particles = [];
@@ -209,19 +219,19 @@ export default function FullScreenPlayerModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-[#070605] text-white flex flex-col p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-300 font-serif select-none"
+      className="fixed inset-0 z-50 text-white flex flex-col p-4 sm:p-6 md:p-8 overflow-y-auto animate-in fade-in duration-300 font-sans select-none"
       style={{
         background: showLyrics
-          ? `radial-gradient(circle at 50% 20%, rgba(${themeColors.rgb}, 0.92) 0%, rgba(${themeColors.rgb}, 0.65) 45%, #120d07 100%)`
+          ? `linear-gradient(180deg, rgb(${themeColors.rgb}) 0%, rgba(${themeColors.rgb}, 0.88) 60%, #100c08 100%)`
           : `radial-gradient(ellipse at 50% 30%, rgba(${themeColors.rgb}, 0.45) 0%, #140f0a 55%, #070605 100%)`
       }}
     >
       {/* ======================= TOP HEADER BAR ======================= */}
       {showLyrics ? (
         /* Spotify-style Lyrics Header (Thumbnail + Title + X close button) */
-        <div className="flex items-center justify-between pb-3 max-w-lg w-full mx-auto">
+        <div className="flex items-center justify-between pb-3 max-w-6xl w-full mx-auto">
           <div className="flex items-center gap-3 min-w-0 pr-4">
-            <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 shadow-md border border-white/20">
+            <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 shadow-lg border border-white/20">
               <ArtworkImage
                 src={currentSong.cover_path || currentSong.album_cover}
                 alt={currentSong.title}
@@ -230,10 +240,10 @@ export default function FullScreenPlayerModal() {
               />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm sm:text-base font-black text-white truncate font-serif">
+              <h3 className="text-base sm:text-lg font-black text-white truncate font-sans">
                 {currentSong.title}
               </h3>
-              <p className="text-xs text-amber-100/75 truncate italic">
+              <p className="text-xs sm:text-sm text-black/70 font-semibold truncate">
                 {currentSong.artist_name || 'Various Artists'}
               </p>
             </div>
@@ -241,14 +251,14 @@ export default function FullScreenPlayerModal() {
 
           <button
             onClick={() => setShowLyrics(false)}
-            className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/35 text-white flex items-center justify-center transition hover:scale-110 flex-shrink-0 shadow-md"
+            className="w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center transition hover:scale-110 flex-shrink-0 shadow-lg"
             title="Close Lyrics View"
           >
             <X className="w-5 h-5 stroke-[2.5]" />
           </button>
         </div>
       ) : (
-        /* Standard Header (Back to Library + Queue) */
+        /* Standard Fullscreen Header */
         <div className="flex items-center justify-between pb-2">
           <button
             onClick={() => setIsFullScreenPlayerOpen(false)}
@@ -276,39 +286,66 @@ export default function FullScreenPlayerModal() {
 
       {/* ======================= MAIN STAGE ======================= */}
       {showLyrics ? (
-        /* Spotify-style Full-Height Lyrics Flow */
-        <div className="flex-1 flex flex-col justify-center my-2 max-w-lg w-full mx-auto relative overflow-hidden">
-          {/* Top & Bottom Fade Masks */}
-          <div className="absolute top-0 inset-x-0 h-10 bg-gradient-to-b from-black/50 to-transparent pointer-events-none z-10" />
-          <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-black/50 to-transparent pointer-events-none z-10" />
+        /* Spotify Desktop/Mobile Full Vibrant Color Lyrics Flow */
+        <div className="flex-1 flex flex-col lg:flex-row items-stretch justify-between my-2 max-w-6xl w-full mx-auto relative overflow-hidden gap-8">
+          {/* Synchronized Lyrics Container (Left/Center full stage) */}
+          <div className="flex-1 flex flex-col justify-center relative overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-12 bg-gradient-to-b from-black/20 to-transparent pointer-events-none z-10" />
+            <div className="absolute bottom-0 inset-x-0 h-12 bg-gradient-to-t from-black/30 to-transparent pointer-events-none z-10" />
 
-          {/* Synchronized Lyrics Container */}
-          <div
-            ref={lyricsContainerRef}
-            className="w-full flex-1 overflow-y-auto py-12 px-2 space-y-4 no-scrollbar relative"
-            style={{ maxHeight: '460px' }}
-          >
-            {lyricsLines.map((line, idx) => {
-              const isActive = idx === activeIndex;
-              const isPast = idx < activeIndex;
+            <div
+              ref={lyricsContainerRef}
+              className="w-full flex-1 overflow-y-auto py-16 px-4 space-y-5 no-scrollbar relative"
+              style={{ maxHeight: '520px' }}
+            >
+              {lyricsLines.map((line, idx) => {
+                const isActive = idx === activeIndex;
+                const isPast = idx < activeIndex;
 
-              return (
-                <p
-                  key={idx}
-                  ref={isActive ? activeLyricRef : null}
-                  onClick={() => seek(line.time)}
-                  className={`cursor-pointer transition-all duration-300 font-serif text-left select-none leading-snug ${
-                    isActive
-                      ? 'text-2xl sm:text-3xl md:text-4xl font-extrabold text-white scale-102 py-2 drop-shadow-[0_0_20px_rgba(255,255,255,0.85)]'
-                      : isPast
-                      ? 'text-lg sm:text-xl font-bold text-black/55 sm:text-black/45 py-1 hover:text-white/80'
-                      : 'text-lg sm:text-xl font-bold text-black/60 sm:text-black/50 py-1 hover:text-white/80'
-                  }`}
-                >
-                  {line.text}
-                </p>
-              );
-            })}
+                return (
+                  <p
+                    key={idx}
+                    ref={isActive ? activeLyricRef : null}
+                    onClick={() => seek(line.time)}
+                    className={`cursor-pointer transition-all duration-300 font-sans text-left select-none leading-snug tracking-tight ${
+                      isActive
+                        ? 'text-3xl sm:text-4xl md:text-5xl font-black text-white scale-102 py-3 drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]'
+                        : isPast
+                        ? 'text-2xl sm:text-3xl md:text-4xl font-extrabold text-black/55 hover:text-black/80 py-1.5'
+                        : 'text-2xl sm:text-3xl md:text-4xl font-extrabold text-black/60 hover:text-black/85 py-1.5'
+                    }`}
+                  >
+                    {line.text}
+                  </p>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right Panel on Desktop (Spotify "Now Playing / About Artist" View) */}
+          <div className="hidden lg:flex flex-col w-80 flex-shrink-0 space-y-4 py-8">
+            <div className="rounded-3xl overflow-hidden shadow-2xl border-2 border-white/20 aspect-square group relative">
+              <ArtworkImage
+                src={currentSong.cover_path || currentSong.album_cover}
+                alt={currentSong.title}
+                fallbackTitle={currentSong.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+            </div>
+
+            <div className="p-4 rounded-2xl bg-black/30 backdrop-blur-md border border-white/10 space-y-2 shadow-lg">
+              <span className="text-[11px] font-bold text-white/70 uppercase tracking-widest flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5" />
+                About the Artist
+              </span>
+              <h4 className="text-lg font-bold text-white truncate">
+                {currentSong.artist_name || '1UP Creator'}
+              </h4>
+              <p className="text-xs text-white/80 line-clamp-3 leading-relaxed">
+                {currentSong.album_title ? `Album: ${currentSong.album_title}` : 'Streaming in high fidelity lossless audio on 1UP Music Studio.'}
+              </p>
+            </div>
           </div>
         </div>
       ) : (
@@ -463,11 +500,11 @@ export default function FullScreenPlayerModal() {
               max={duration || 100}
               value={progress}
               onChange={(e) => seek(parseFloat(e.target.value))}
-              className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer focus:outline-none"
+              className="w-full h-1.5 bg-white/25 rounded-lg appearance-none cursor-pointer focus:outline-none"
               style={{ accentColor: showLyrics ? '#ffffff' : themeColors.primary }}
             />
           </div>
-          <div className="flex items-center justify-between text-xs font-mono text-amber-100/80">
+          <div className="flex items-center justify-between text-xs font-mono text-white/80">
             <span>{formatTime(progress)}</span>
             <span>{formatRemainingTime(progress, duration)}</span>
           </div>
@@ -480,7 +517,7 @@ export default function FullScreenPlayerModal() {
             <button
               onClick={() => toggleLike(currentSong.id)}
               className={`p-2.5 rounded-full transition hover:scale-110 ${
-                currentSong.is_liked ? 'text-rose-500 fill-rose-500' : 'text-white/70 hover:text-white'
+                currentSong.is_liked ? 'text-rose-500 fill-rose-500' : 'text-white/80 hover:text-white'
               }`}
             >
               <Heart className={`w-6 h-6 ${currentSong.is_liked ? 'fill-rose-500' : ''}`} />
@@ -507,7 +544,7 @@ export default function FullScreenPlayerModal() {
                   alert('Song link copied to clipboard!');
                 }
               }}
-              className="p-2.5 rounded-full bg-white/10 text-white/90 hover:text-white hover:bg-white/20 transition hover:scale-110 shadow-md"
+              className="p-2.5 rounded-full bg-black/30 text-white/90 hover:text-white hover:bg-black/50 transition hover:scale-110 shadow-md"
               title="Share Lyrics"
             >
               <Share2 className="w-5 h-5" />

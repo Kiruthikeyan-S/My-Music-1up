@@ -11,7 +11,8 @@ import {
   VolumeX,
   ListMusic,
   Maximize2,
-  Activity
+  Activity,
+  Mic2
 } from 'lucide-react';
 import { useAudio } from '../../context/AudioContext';
 import VisualizerCanvas from './VisualizerCanvas';
@@ -197,8 +198,19 @@ export default function AudioPlayer() {
           </div>
         </div>
 
-        {/* Right Section: Volume, Speed, Visualizer & Queue */}
-        <div className="hidden lg:flex items-center justify-end gap-3 w-1/4">
+        {/* Right Section: Lyrics, Visualizer, Speed, Queue & Volume */}
+        <div className="hidden lg:flex items-center justify-end gap-2.5 w-1/4">
+          {/* Lyrics View Switcher Button (Spotify-Style) */}
+          <button
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('1up_open_lyrics'));
+            }}
+            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition hover:scale-110"
+            title="Open Lyrics View"
+          >
+            <Mic2 className="w-4 h-4 text-amber-300" />
+          </button>
+
           {/* Visualizer Toggle */}
           <button
             onClick={() => setShowVisualizer(prev => !prev)}

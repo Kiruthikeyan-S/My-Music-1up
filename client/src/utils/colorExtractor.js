@@ -3,10 +3,10 @@
 export function extractColorsFromImage(imageSrc, callback) {
   if (!imageSrc) {
     callback({
-      primary: '#6366f1',
-      secondary: '#06b6d4',
-      glow: 'rgba(99, 102, 241, 0.5)',
-      gradient: 'from-indigo-600/40 via-purple-600/30 to-cyan-500/40'
+      primary: '#e5a93c',
+      secondary: '#f3c66f',
+      glow: 'rgba(229, 169, 60, 0.65)',
+      rgb: '229, 169, 60'
     });
     return;
   }
@@ -26,7 +26,7 @@ export function extractColorsFromImage(imageSrc, callback) {
       const imageData = ctx.getImageData(0, 0, 64, 64).data;
       let r = 0, g = 0, b = 0, count = 0;
       let maxSaturation = 0;
-      let vibrantR = 99, vibrantG = 102, vibrantB = 241;
+      let vibrantR = 229, vibrantG = 169, vibrantB = 60;
 
       for (let i = 0; i < imageData.length; i += 16) {
         const red = imageData[i];
@@ -35,8 +35,8 @@ export function extractColorsFromImage(imageSrc, callback) {
         const alpha = imageData[i + 3];
 
         if (alpha < 128) continue;
-        // Ignore almost black or almost white pixels
-        if ((red < 25 && green < 25 && blue < 25) || (red > 240 && green > 240 && blue > 240)) continue;
+        // Ignore pitch black and pure white
+        if ((red < 20 && green < 20 && blue < 20) || (red > 245 && green > 245 && blue > 245)) continue;
 
         r += red;
         g += green;
@@ -57,6 +57,15 @@ export function extractColorsFromImage(imageSrc, callback) {
       }
 
       if (count > 0) {
+        // If the vibrant color is too dark, brighten it so the lyrics background is vivid and rich
+        let lum = 0.299 * vibrantR + 0.587 * vibrantG + 0.114 * vibrantB;
+        if (lum < 55) {
+          const factor = 65 / (lum || 1);
+          vibrantR = Math.min(255, Math.round(vibrantR * factor));
+          vibrantG = Math.min(255, Math.round(vibrantG * factor));
+          vibrantB = Math.min(255, Math.round(vibrantB * factor));
+        }
+
         const avgR = Math.round(r / count);
         const avgG = Math.round(g / count);
         const avgB = Math.round(b / count);
@@ -73,28 +82,28 @@ export function extractColorsFromImage(imageSrc, callback) {
         });
       } else {
         callback({
-          primary: '#6366f1',
-          secondary: '#06b6d4',
-          glow: 'rgba(99, 102, 241, 0.5)',
-          rgb: '99, 102, 241'
+          primary: '#e5a93c',
+          secondary: '#f3c66f',
+          glow: 'rgba(229, 169, 60, 0.65)',
+          rgb: '229, 169, 60'
         });
       }
     } catch (e) {
       callback({
-        primary: '#6366f1',
-        secondary: '#06b6d4',
-        glow: 'rgba(99, 102, 241, 0.5)',
-        rgb: '99, 102, 241'
+        primary: '#e5a93c',
+        secondary: '#f3c66f',
+        glow: 'rgba(229, 169, 60, 0.65)',
+        rgb: '229, 169, 60'
       });
     }
   };
 
   img.onerror = () => {
     callback({
-      primary: '#6366f1',
-      secondary: '#06b6d4',
-      glow: 'rgba(99, 102, 241, 0.5)',
-      rgb: '99, 102, 241'
+      primary: '#e5a93c',
+      secondary: '#f3c66f',
+      glow: 'rgba(229, 169, 60, 0.65)',
+      rgb: '229, 169, 60'
     });
   };
 }
