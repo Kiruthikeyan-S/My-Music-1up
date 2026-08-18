@@ -213,22 +213,7 @@ export default function FullScreenPlayerModal() {
           <span>Back to Library</span>
         </button>
 
-        {/* Center / Right Buttons: Lyrics Toggle & Queue */}
-        <div className="flex items-center gap-2.5">
-          {/* Lyrics View Switcher Button */}
-          <button
-            onClick={() => setShowLyrics(prev => !prev)}
-            className={`px-3.5 py-2 rounded-2xl border transition-all flex items-center gap-2 text-xs font-bold shadow-lg ${
-              showLyrics
-                ? 'bg-amber-400 text-dark-950 border-amber-400 font-black shadow-glow-brand'
-                : 'bg-black/60 backdrop-blur-md border-amber-500/30 text-amber-200 hover:text-white hover:bg-white/10'
-            }`}
-            title={showLyrics ? 'Switch to Artwork Mode' : 'Switch to Lyrics Mode'}
-          >
-            <Mic2 className="w-4 h-4" />
-            <span>Lyrics</span>
-          </button>
-
+        <div className="flex items-center gap-2">
           <button
             onClick={() => {
               setIsFullScreenPlayerOpen(false);
@@ -246,38 +231,7 @@ export default function FullScreenPlayerModal() {
       {showLyrics ? (
         /* ================= 1. SYNCHRONIZED GLOWING LYRICS BOX ================= */
         <div className="flex-1 flex flex-col items-center justify-center my-2 max-w-xl w-full mx-auto relative">
-          {/* Custom Lyrics Edit & Tanglish Generator Bar */}
-          <div className="w-full flex flex-wrap items-center justify-between gap-2 px-2 pb-2">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  const tanglish = generateTanglishLyrics(currentSong.title, currentSong.artist_name, duration || 210);
-                  setRawLyricsText(tanglish);
-                  setLyricsLines(parseLrcLyrics(tanglish, duration || 210));
-                  localStorage.setItem(`1up_lyrics_${currentSong.id}`, tanglish);
-                }}
-                className="text-xs font-bold text-dark-950 bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 px-3 py-1.5 rounded-xl shadow-glow-brand transition flex items-center gap-1.5"
-                title="Auto-Generate Tamil Lyrics in English Script (Tanglish)"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>✨ Auto-Generate Tanglish</span>
-              </button>
-
-              <span className="text-[11px] text-amber-200/60 font-serif italic hidden sm:inline">
-                {loadingLyrics ? 'Loading lyrics...' : 'Tap line to seek'}
-              </span>
-            </div>
-
-            <button
-              onClick={() => setIsEditingLyrics(prev => !prev)}
-              className="text-xs font-bold text-amber-300 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/50 border border-white/15"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>{isEditingLyrics ? 'Close' : 'Edit'}</span>
-            </button>
-          </div>
-
-          {/* Dedicated Glassmorphism Lyrics Box */}
+          {/* Dedicated Clean Glassmorphism Lyrics Box */}
           <div className="w-full h-80 sm:h-96 rounded-3xl bg-black/60 backdrop-blur-2xl border border-white/15 p-4 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden flex flex-col">
             {/* Top & Bottom Soft Fade Masks */}
             <div className="absolute top-0 inset-x-0 h-8 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-10" />
@@ -450,16 +404,33 @@ export default function FullScreenPlayerModal() {
               {currentSong.artist_name || 'Unknown Artist'} {currentSong.album_title ? `• ${currentSong.album_title}` : ''}
             </p>
           </div>
-          <button
-            onClick={() => toggleLike(currentSong.id)}
-            className={`p-3 rounded-full transition hover:scale-125 ${
-              currentSong.is_liked
-                ? 'text-rose-500 fill-rose-500 bg-rose-500/15'
-                : 'text-amber-200/60 hover:text-white bg-white/5'
-            }`}
-          >
-            <Heart className={`w-6 h-6 ${currentSong.is_liked ? 'fill-rose-500' : ''}`} />
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Lyrics Symbol Button (Next to Love Heart) */}
+            <button
+              onClick={() => setShowLyrics(prev => !prev)}
+              className={`p-2.5 sm:p-3 rounded-full transition-all hover:scale-125 ${
+                showLyrics
+                  ? 'text-amber-400 fill-amber-400 bg-amber-500/25 ring-2 ring-amber-400/50 shadow-glow-brand'
+                  : 'text-amber-200/60 hover:text-white bg-white/5'
+              }`}
+              title={showLyrics ? 'Hide Lyrics' : 'Show Lyrics'}
+            >
+              <Mic2 className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+
+            {/* Heart / Like Button */}
+            <button
+              onClick={() => toggleLike(currentSong.id)}
+              className={`p-2.5 sm:p-3 rounded-full transition-all hover:scale-125 ${
+                currentSong.is_liked
+                  ? 'text-rose-500 fill-rose-500 bg-rose-500/15'
+                  : 'text-amber-200/60 hover:text-white bg-white/5'
+              }`}
+              title={currentSong.is_liked ? 'Remove from Liked' : 'Save to Liked'}
+            >
+              <Heart className={`w-5 h-5 sm:w-6 sm:h-6 ${currentSong.is_liked ? 'fill-rose-500' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {/* Progress Scrubber Line */}
