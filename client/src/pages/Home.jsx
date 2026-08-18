@@ -92,13 +92,12 @@ export default function Home() {
           duration: meta.duration || 0,
           cover_path: meta.pictureDataUrl || '',
           album_cover: meta.pictureDataUrl || '',
-          blob: file,
           is_local: true,
           created_at: new Date().toISOString()
         };
-        await saveLocalSong(newLocalSong);
+        await saveLocalSong(newLocalSong, file);
       } catch (err) {
-        console.error('Failed to parse file:', file.name, err);
+        console.error('Error importing audio file offline:', err);
       }
     }
     await fetchSongs();

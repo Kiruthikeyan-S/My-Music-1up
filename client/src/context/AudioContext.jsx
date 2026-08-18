@@ -128,7 +128,14 @@ export function AudioProvider({ children }) {
     setIsLoadingAudio(true);
     setAudioError(null);
 
-    const streamUrl = song.audioUrl || song.blobUrl || (song.id ? songsAPI.getStreamUrl(song.id) : '');
+    let streamUrl = song.audioUrl || song.blobUrl;
+    if (!streamUrl && song.fileBlob) {
+      streamUrl = URL.createObjectURL(song.fileBlob);
+    }
+    if (!streamUrl && song.id && !song.is_local) {
+      streamUrl = songsAPI.getStreamUrl(song.id);
+    }
+
     audio.src = streamUrl;
     audio.playbackRate = playbackSpeed;
 

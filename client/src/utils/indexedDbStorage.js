@@ -1,4 +1,4 @@
-// Persistent Browser IndexedDB storage for local audio tracks (Preserved across page reloads)
+// Persistent Browser IndexedDB storage for local audio tracks (Preserved across page reloads & offline)
 
 const DB_NAME = 'OneUpMusicDB';
 const DB_VERSION = 1;
@@ -21,16 +21,18 @@ function openDB() {
 }
 
 // Save a song and its audio binary blob to IndexedDB
-export async function saveLocalSong(songMeta, fileBlob) {
+export async function saveLocalSong(songMeta, fileBlob = null) {
   try {
     const db = await openDB();
+    const blobToStore = fileBlob || songMeta.fileBlob || songMeta.blob;
+
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
 
       const record = {
         ...songMeta,
-        fileBlob: fileBlob,
+        fileBlob: blobToStore,
         savedAt: Date.now()
       };
 
@@ -64,7 +66,8 @@ export async function getLocalSongs() {
             ...r,
             blobUrl: blobUrl,
             audioUrl: blobUrl,
-            fileBlob: undefined // don't keep raw reference in state
+            is_local: true,
+            fileBlob: r.fileBlob // retain blob reference for offline reuse
           };
         });
         resolve(loadedSongs);
