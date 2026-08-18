@@ -244,8 +244,8 @@ export default function FullScreenPlayerModal() {
 
       {/* Main Stage: Either Synchronized Glowing Lyrics OR Artwork Visualizer */}
       {showLyrics ? (
-        /* ================= 1. SYNCHRONIZED GLOWING LYRICS VIEW ================= */
-        <div className="flex-1 flex flex-col items-center justify-center my-3 max-w-2xl w-full mx-auto relative overflow-hidden">
+        /* ================= 1. SYNCHRONIZED GLOWING LYRICS BOX ================= */
+        <div className="flex-1 flex flex-col items-center justify-center my-2 max-w-xl w-full mx-auto relative">
           {/* Custom Lyrics Edit & Tanglish Generator Bar */}
           <div className="w-full flex flex-wrap items-center justify-between gap-2 px-2 pb-2">
             <div className="flex items-center gap-2">
@@ -264,7 +264,7 @@ export default function FullScreenPlayerModal() {
               </button>
 
               <span className="text-[11px] text-amber-200/60 font-serif italic hidden sm:inline">
-                {loadingLyrics ? 'Loading lyrics...' : 'Tap any line to seek!'}
+                {loadingLyrics ? 'Loading lyrics...' : 'Tap line to seek'}
               </span>
             </div>
 
@@ -273,62 +273,67 @@ export default function FullScreenPlayerModal() {
               className="text-xs font-bold text-amber-300 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/50 border border-white/15"
             >
               <Edit3 className="w-3.5 h-3.5" />
-              <span>{isEditingLyrics ? 'Close Editor' : 'Edit Lyrics'}</span>
+              <span>{isEditingLyrics ? 'Close' : 'Edit'}</span>
             </button>
           </div>
 
-          {/* Edit Box Mode */}
-          {isEditingLyrics ? (
-            <div className="w-full flex-1 flex flex-col p-4 rounded-3xl bg-black/80 border border-amber-500/40 shadow-2xl space-y-3">
-              <textarea
-                value={rawLyricsText}
-                onChange={(e) => setRawLyricsText(e.target.value)}
-                placeholder="Paste lyrics or LRC synced format here ([00:15.00] line...)"
-                className="w-full flex-1 p-3 rounded-2xl bg-black/70 border border-white/15 text-white text-sm font-serif focus:outline-none focus:border-amber-400 resize-none"
-                rows={10}
-              />
-              <button
-                onClick={handleSaveLyrics}
-                className="self-end px-5 py-2 rounded-xl bg-amber-400 text-dark-950 font-black text-xs shadow-glow-brand hover:scale-105 active:scale-95 transition flex items-center gap-1.5"
-              >
-                <Check className="w-4 h-4" />
-                <span>Save Lyrics</span>
-              </button>
-            </div>
-          ) : (
-            /* Synchronized Scrolling Lyrics Stage */
-            <div
-              ref={lyricsContainerRef}
-              className="w-full flex-1 overflow-y-auto px-4 py-8 space-y-6 text-center scrollbar-none mask-gradient"
-              style={{ maxHeight: '420px' }}
-            >
-              {lyricsLines.map((line, idx) => {
-                const isActive = idx === activeIndex;
-                const isPast = idx < activeIndex;
+          {/* Dedicated Glassmorphism Lyrics Box */}
+          <div className="w-full h-80 sm:h-96 rounded-3xl bg-black/60 backdrop-blur-2xl border border-white/15 p-4 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden flex flex-col">
+            {/* Top & Bottom Soft Fade Masks */}
+            <div className="absolute top-0 inset-x-0 h-8 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-10" />
+            <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-10" />
 
-                return (
-                  <p
-                    key={idx}
-                    ref={isActive ? activeLyricRef : null}
-                    onClick={() => seek(line.time)}
-                    className={`cursor-pointer text-lg sm:text-2xl md:text-3xl font-bold transition-all duration-300 font-serif select-none ${
-                      isActive
-                        ? 'scale-110 font-black tracking-wide filter drop-shadow-[0_0_20px_rgba(229,169,60,0.85)]'
-                        : isPast
-                        ? 'opacity-40 hover:opacity-80 text-slate-300'
-                        : 'opacity-50 hover:opacity-90 text-amber-100/70'
-                    }`}
-                    style={{
-                      color: isActive ? themeColors.primary : undefined,
-                      textShadow: isActive ? `0 0 25px ${themeColors.glow}` : undefined
-                    }}
-                  >
-                    {line.text}
-                  </p>
-                );
-              })}
-            </div>
-          )}
+            {/* Edit Box Mode */}
+            {isEditingLyrics ? (
+              <div className="w-full flex-1 flex flex-col space-y-2 z-20">
+                <textarea
+                  value={rawLyricsText}
+                  onChange={(e) => setRawLyricsText(e.target.value)}
+                  placeholder="Paste lyrics or LRC synced format here ([00:15.00] line...)"
+                  className="w-full flex-1 p-3 rounded-2xl bg-black/80 border border-white/15 text-white text-xs sm:text-sm font-serif focus:outline-none focus:border-amber-400 resize-none no-scrollbar"
+                />
+                <button
+                  onClick={handleSaveLyrics}
+                  className="self-end px-5 py-2 rounded-xl bg-amber-400 text-dark-950 font-black text-xs shadow-glow-brand hover:scale-105 active:scale-95 transition flex items-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Save Lyrics</span>
+                </button>
+              </div>
+            ) : (
+              /* Synchronized Scrolling Lyrics Inside Box */
+              <div
+                ref={lyricsContainerRef}
+                className="w-full flex-1 overflow-y-auto py-10 space-y-3 text-center no-scrollbar relative"
+              >
+                {lyricsLines.map((line, idx) => {
+                  const isActive = idx === activeIndex;
+                  const isPast = idx < activeIndex;
+
+                  return (
+                    <p
+                      key={idx}
+                      ref={isActive ? activeLyricRef : null}
+                      onClick={() => seek(line.time)}
+                      className={`cursor-pointer transition-all duration-500 font-serif select-none ${
+                        isActive
+                          ? 'text-xl sm:text-2xl md:text-3xl font-black scale-110 tracking-wide py-2.5 drop-shadow-[0_0_30px_rgba(229,169,60,0.95)]'
+                          : isPast
+                          ? 'text-xs sm:text-sm opacity-35 hover:opacity-75 text-slate-400 scale-90 py-0.5'
+                          : 'text-xs sm:text-sm opacity-40 hover:opacity-80 text-amber-100/60 scale-90 py-0.5'
+                      }`}
+                      style={{
+                        color: isActive ? themeColors.primary : undefined,
+                        textShadow: isActive ? `0 0 25px ${themeColors.glow}` : undefined
+                      }}
+                    >
+                      {line.text}
+                    </p>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         /* ================= 2. ARTWORK VISUALIZER STAGE ================= */

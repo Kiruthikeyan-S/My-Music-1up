@@ -179,21 +179,12 @@ input[type="range"] {
   accent-color: #e5a93c;
 }
 
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* No Scrollbar Utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(229, 169, 60, 0.25);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(229, 169, 60, 0.5);
-}
