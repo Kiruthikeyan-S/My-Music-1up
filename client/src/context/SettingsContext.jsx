@@ -45,10 +45,41 @@ export const THEMES = [
   }
 ];
 
+export const PRESET_WALLPAPERS = [
+  {
+    id: 'cosmic',
+    name: 'Cosmic Earth Sunrise Horizon',
+    url: '/bg-horizon.jpg',
+    preview: '/bg-horizon.jpg'
+  },
+  {
+    id: 'noir',
+    name: 'Obsidian Deep Space Nebula',
+    url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=1600&auto=format&fit=crop&q=80',
+    preview: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=300&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'desert',
+    name: 'Desert Festival Golden Sunset',
+    url: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1600&auto=format&fit=crop&q=80',
+    preview: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'cyber',
+    name: 'Cyber Neon Lights Horizon',
+    url: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=1600&auto=format&fit=crop&q=80',
+    preview: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300&auto=format&fit=crop&q=80'
+  }
+];
+
 export function SettingsProvider({ children }) {
   // Load settings from localStorage
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('1up_theme') || 'desert';
+  });
+
+  const [wallpaper, setWallpaper] = useState(() => {
+    return localStorage.getItem('1up_wallpaper') || '/bg-horizon.jpg';
   });
 
   const [defaultArtMode, setDefaultArtMode] = useState(() => {
@@ -81,6 +112,11 @@ export function SettingsProvider({ children }) {
     localStorage.setItem('1up_theme', newTheme);
   };
 
+  const changeWallpaper = (newWallpaperUrl) => {
+    setWallpaper(newWallpaperUrl);
+    localStorage.setItem('1up_wallpaper', newWallpaperUrl);
+  };
+
   const changeArtMode = (mode) => {
     setDefaultArtMode(mode);
     localStorage.setItem('1up_art_mode', mode);
@@ -103,6 +139,8 @@ export function SettingsProvider({ children }) {
       theme,
       currentThemeObj,
       changeTheme,
+      wallpaper,
+      changeWallpaper,
       defaultArtMode,
       changeArtMode,
       visualizerStyle,

@@ -6,17 +6,19 @@ import AudioPlayer from '../player/AudioPlayer';
 import QueueDrawer from '../player/QueueDrawer';
 import FullScreenPlayerModal from '../player/FullScreenPlayerModal';
 import { useAudio } from '../../context/AudioContext';
+import { useSettings } from '../../context/SettingsContext';
 
 export default function Layout() {
   const { currentSong } = useAudio();
+  const { wallpaper } = useSettings();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col relative overflow-x-hidden">
-      {/* Background Image with Dark Glassmorphism Overlay */}
+      {/* Dynamic Background Image with Dark Glassmorphism Overlay */}
       <div
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat -z-30 filter brightness-[0.45] saturate-125 scale-105 pointer-events-none"
-        style={{ backgroundImage: "url('/bg-horizon.jpg')" }}
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat -z-30 filter brightness-[0.45] saturate-125 scale-105 pointer-events-none transition-all duration-700"
+        style={{ backgroundImage: `url('${wallpaper || '/bg-horizon.jpg'}')` }}
       />
       {/* Subtle Atmospheric Gradient Dark Veil */}
       <div className="fixed inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/90 -z-20 pointer-events-none" />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Settings as SettingsIcon,
   Palette,
@@ -10,13 +10,11 @@ import {
   Sparkles,
   Save,
   CheckCircle2,
-  Sliders,
-  Flame,
-  Zap,
-  Globe,
-  Music
+  Image as ImageIcon,
+  Upload,
+  Plus
 } from 'lucide-react';
-import { useSettings, THEMES } from '../context/SettingsContext';
+import { useSettings, THEMES, PRESET_WALLPAPERS } from '../context/SettingsContext';
 import OneUpLogo from '../components/common/OneUpLogo';
 import SiriWaveCanvas from '../components/player/SiriWaveCanvas';
 
@@ -25,6 +23,8 @@ export default function Settings() {
     theme,
     currentThemeObj,
     changeTheme,
+    wallpaper,
+    changeWallpaper,
     defaultArtMode,
     changeArtMode,
     visualizerStyle,
@@ -35,6 +35,7 @@ export default function Settings() {
 
   const [formData, setFormData] = useState({ ...aboutInfo });
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleSaveAbout = (e) => {
     e.preventDefault();
@@ -43,32 +44,110 @@ export default function Settings() {
     setTimeout(() => setSaveSuccess(false), 3000);
   };
 
+  const handleUploadCustomWallpaper = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const dataUrl = uploadEvent.target.result;
+      changeWallpaper(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-28 font-serif">
       {/* Header Banner */}
       <div className="glass-card rounded-3xl p-6 sm:p-8 border border-amber-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
         <div className="flex items-center gap-5">
-          <div className="p-3 rounded-2xl bg-black/60 border border-amber-500/40 shadow-glow-brand animate-float flex-shrink-0">
-            <SettingsIcon className="w-9 h-9 text-amber-400 animate-spin-slow" />
+          <div className="p-3 rounded-2xl bg-black/60 border border-emerald-500/40 shadow-glow-brand animate-float flex-shrink-0">
+            <OneUpLogo className="h-10 w-auto" />
           </div>
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-wide flex items-center gap-3">
               Studio Settings & Profile
             </h2>
             <p className="text-xs sm:text-sm text-amber-200/70 mt-1 italic">
-              Customize your aesthetic themes, player 3D presentation styles, visualizer waveforms, and personal profile.
+              Customize your aesthetic themes, cosmic background wallpapers, player 3D styles, and profile.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-black/40 border border-white/10 text-xs text-amber-300 font-mono">
           <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-          <span>1UP Studio v2.4</span>
+          <span>1UP Studio v2.5</span>
         </div>
       </div>
 
-      {/* 1. THEME SELECTION */}
+      {/* 1. WALLPAPER SELECTION & CUSTOM UPLOAD */}
       <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <ImageIcon className="w-5 h-5 text-amber-400" />
+            <h3 className="text-xl font-bold text-white tracking-wide">Atmospheric Background Wallpaper</h3>
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 hover:text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span>Upload Custom Wallpaper</span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleUploadCustomWallpaper}
+          />
+        </div>
+        <p className="text-xs text-slate-400 italic">Choose from atmospheric cosmic presets or upload your own wallpaper image.</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+          {PRESET_WALLPAPERS.map((w) => {
+            const isSelected = wallpaper === w.url;
+            return (
+              <div
+                key={w.id}
+                onClick={() => changeWallpaper(w.url)}
+                className={`cursor-pointer rounded-2xl p-3 border transition-all duration-300 relative overflow-hidden group ${
+                  isSelected
+                    ? 'border-amber-400 bg-black/80 shadow-[0_0_30px_rgba(229,169,60,0.35)] scale-[1.02]'
+                    : 'border-white/10 bg-black/40 hover:border-white/30 hover:bg-black/60'
+                }`}
+              >
+                <div className="h-28 rounded-xl overflow-hidden mb-3 relative shadow-md bg-black">
+                  <img
+                    src={w.preview}
+                    alt={w.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  {isSelected && (
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-amber-400 text-dark-950 flex items-center justify-center font-black shadow-lg">
+                        <CheckCircle2 className="w-5 h-5 text-dark-950" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <h4 className="text-xs font-bold text-white flex items-center justify-between">
+                  <span className="truncate pr-1">{w.name}</span>
+                  {isSelected && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-amber-400 text-dark-950 font-black">
+                      ACTIVE
+                    </span>
+                  )}
+                </h4>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 2. THEME SELECTION */}
+      <section className="space-y-4 pt-4 border-t border-white/10">
         <div className="flex items-center gap-2.5">
           <Palette className="w-5 h-5 text-amber-400" />
           <h3 className="text-xl font-bold text-white tracking-wide">Aesthetic Theme Palette</h3>
@@ -111,7 +190,7 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* 2. PLAYER ARTWORK 3D / VINYL / FLOATING PRESENTATION */}
+      {/* 3. PLAYER ARTWORK 3D / VINYL / FLOATING PRESENTATION */}
       <section className="space-y-4 pt-4 border-t border-white/10">
         <div className="flex items-center gap-2.5">
           <Layers className="w-5 h-5 text-cyan-400" />
@@ -179,7 +258,7 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* 3. SIRI-STYLE DIGITAL ASSISTANT WAVEFORM VISUALIZER PREVIEW */}
+      {/* 4. SIRI-STYLE DIGITAL ASSISTANT WAVEFORM VISUALIZER */}
       <section className="space-y-4 pt-4 border-t border-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -222,7 +301,7 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* 4. ABOUT ME PROFILE SECTION */}
+      {/* 5. ABOUT ME PROFILE SECTION */}
       <section className="space-y-4 pt-4 border-t border-white/10">
         <div className="flex items-center gap-2.5">
           <User className="w-5 h-5 text-amber-400" />

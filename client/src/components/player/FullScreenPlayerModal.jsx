@@ -209,11 +209,11 @@ export default function FullScreenPlayerModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 text-white flex flex-col p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-300 font-serif select-none"
+      className="fixed inset-0 z-50 bg-[#070605] text-white flex flex-col p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-300 font-serif select-none"
       style={{
         background: showLyrics
-          ? `radial-gradient(circle at 50% 20%, rgba(${themeColors.rgb}, 0.85) 0%, rgba(${themeColors.rgb}, 0.55) 45%, #18110a 100%)`
-          : `radial-gradient(ellipse at 50% 30%, rgba(${themeColors.rgb}, 0.38) 0%, rgba(16, 12, 8, 0.97) 55%, #050403 100%)`
+          ? `radial-gradient(circle at 50% 20%, rgba(${themeColors.rgb}, 0.92) 0%, rgba(${themeColors.rgb}, 0.65) 45%, #120d07 100%)`
+          : `radial-gradient(ellipse at 50% 30%, rgba(${themeColors.rgb}, 0.45) 0%, #140f0a 55%, #070605 100%)`
       }}
     >
       {/* ======================= TOP HEADER BAR ======================= */}
