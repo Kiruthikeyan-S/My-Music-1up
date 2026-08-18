@@ -120,7 +120,14 @@ export function AudioProvider({ children }) {
       }
     }
 
-    setCurrentSong(song);
+    let isSongLiked = song.is_liked;
+    try {
+      const savedLiked = JSON.parse(localStorage.getItem('1up_liked_songs') || '[]');
+      if (savedLiked.includes(song.id)) isSongLiked = 1;
+    } catch {}
+
+    const songWithLiked = { ...song, is_liked: isSongLiked ? 1 : 0 };
+    setCurrentSong(songWithLiked);
     setIsLoadingAudio(true);
     setAudioError(null);
 
@@ -296,28 +303,41 @@ export function AudioProvider({ children }) {
     }
   };
 
-  // Like Song helper
+  // Like Song helper (Works 100% offline with localStorage & syncs with backend if logged in)
   const toggleLike = async (songId) => {
-    if (!user) return false;
+    if (!songId) return false;
+
+    let savedLiked = [];
     try {
-      const res = await libraryAPI.toggleLike(songId);
-      const isLiked = res.data.is_liked;
+      savedLiked = JSON.parse(localStorage.getItem('1up_liked_songs') || '[]');
+    } catch {}
 
-      // Update current song if matching
-      if (currentSong && currentSong.id === songId) {
-        setCurrentSong(prev => ({ ...prev, is_liked: isLiked ? 1 : 0 }));
-      }
+    const alreadyLiked = savedLiked.includes(songId);
+    let isLiked = !alreadyLiked;
 
-      // Update queue
-      setQueue(prev =>
-        prev.map(s => (s.id === songId ? { ...s, is_liked: isLiked ? 1 : 0 } : s))
-      );
-
-      return isLiked;
-    } catch (err) {
-      console.error('Failed to toggle like:', err);
-      return false;
+    if (alreadyLiked) {
+      savedLiked = savedLiked.filter(id => id !== songId);
+    } else {
+      savedLiked.push(songId);
     }
+    localStorage.setItem('1up_liked_songs', JSON.stringify(savedLiked));
+
+    // Update current song if matching
+    if (currentSong && currentSong.id === songId) {
+      setCurrentSong(prev => ({ ...prev, is_liked: isLiked ? 1 : 0 }));
+    }
+
+    // Update queue
+    setQueue(prev =>
+      prev.map(s => (s.id === songId ? { ...s, is_liked: isLiked ? 1 : 0 } : s))
+    );
+
+    // Sync to backend if logged in
+    if (user) {
+      libraryAPI.toggleLike(songId).catch(() => {});
+    }
+
+    return isLiked;
   };
 
   return (

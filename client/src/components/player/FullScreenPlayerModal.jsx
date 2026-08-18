@@ -15,8 +15,6 @@ import {
   Layers,
   Box,
   Mic2,
-  Edit3,
-  Check,
   Sparkles
 } from 'lucide-react';
 import { useAudio } from '../../context/AudioContext';
@@ -61,8 +59,6 @@ export default function FullScreenPlayerModal() {
   const [showLyrics, setShowLyrics] = useState(false);
   const [lyricsLines, setLyricsLines] = useState([]);
   const [rawLyricsText, setRawLyricsText] = useState('');
-  const [isEditingLyrics, setIsEditingLyrics] = useState(false);
-  const [loadingLyrics, setLoadingLyrics] = useState(false);
 
   const activeLyricRef = useRef(null);
   const lyricsContainerRef = useRef(null);
@@ -105,20 +101,18 @@ export default function FullScreenPlayerModal() {
         return;
       }
 
-      // 3. Auto-fetch from free lyrics provider (LRCLIB)
-      setLoadingLyrics(true);
+      // 3. Auto-fetch online or generate Tanglish for Tamil songs
       const onlineLyrics = await fetchOnlineLyrics(currentSong.title, currentSong.artist_name);
       if (isMounted) {
         if (onlineLyrics) {
           setRawLyricsText(onlineLyrics);
           setLyricsLines(parseLrcLyrics(onlineLyrics, duration || 210));
         } else {
-          // Default fallback demo lines for immersion
-          const fallback = `[00:00.00] ♫ ${currentSong.title} ♫\n[00:06.00] Artist: ${currentSong.artist_name || 'Local Artist'}\n[00:12.00] Playing in 1UP Music Studio...\n[00:20.00] Enjoy the high-fidelity sound vibes.\n[00:30.00] (Click "Edit Lyrics" above to add your own synchronized lyrics!)`;
-          setRawLyricsText(fallback);
-          setLyricsLines(parseLrcLyrics(fallback, duration || 210));
+          // Generate Tanglish synchronized lyrics
+          const tanglish = generateTanglishLyrics(currentSong.title, currentSong.artist_name, duration || 210);
+          setRawLyricsText(tanglish);
+          setLyricsLines(parseLrcLyrics(tanglish, duration || 210));
         }
-        setLoadingLyrics(false);
       }
     }
 
@@ -128,7 +122,7 @@ export default function FullScreenPlayerModal() {
 
   // Auto-scroll active lyric into view
   useEffect(() => {
-    if (showLyrics && activeLyricRef.current) {
+    if (activeLyricRef.current) {
       activeLyricRef.current.scrollIntoView({
         behavior: 'smooth',
         block: 'center'
@@ -168,12 +162,6 @@ export default function FullScreenPlayerModal() {
     }
   }
 
-  const handleSaveLyrics = () => {
-    localStorage.setItem(`1up_lyrics_${currentSong.id}`, rawLyricsText);
-    setLyricsLines(parseLrcLyrics(rawLyricsText, duration || 210));
-    setIsEditingLyrics(false);
-  };
-
   // Trigger Blast Particle Scatter on Touch/PointerDown
   const triggerBlast = () => {
     setIsBlasted(true);
@@ -197,7 +185,7 @@ export default function FullScreenPlayerModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-[#070605] text-white flex flex-col p-4 sm:p-6 overflow-y-auto animate-in fade-in slide-in-from-bottom duration-300 font-serif select-none"
+      className="fixed inset-0 z-50 bg-[#070605] text-white flex flex-col p-4 sm:p-6 overflow-y-auto animate-in fade-in slide-in-from-bottom duration-300 font-serif select-none no-scrollbar"
       style={{
         background: `radial-gradient(ellipse at 50% 30%, rgba(${themeColors.rgb}, 0.38) 0%, rgba(16, 12, 8, 0.97) 55%, #050403 100%)`
       }}
@@ -227,174 +215,110 @@ export default function FullScreenPlayerModal() {
         </div>
       </div>
 
-      {/* Main Stage: Either Synchronized Glowing Lyrics OR Artwork Visualizer */}
-      {showLyrics ? (
-        /* ================= 1. SYNCHRONIZED GLOWING LYRICS BOX ================= */
-        <div className="flex-1 flex flex-col items-center justify-center my-2 max-w-xl w-full mx-auto relative">
-          {/* Dedicated Clean Glassmorphism Lyrics Box */}
-          <div className="w-full h-80 sm:h-96 rounded-3xl bg-black/60 backdrop-blur-2xl border border-white/15 p-4 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden flex flex-col">
-            {/* Top & Bottom Soft Fade Masks */}
-            <div className="absolute top-0 inset-x-0 h-8 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-10" />
-            <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-10" />
+      {/* Main Stage: Artwork Visualizer Plate */}
+      <div className="flex-1 flex flex-col items-center justify-center my-3 sm:my-5 relative select-none">
+        {/* Surrounding 360-Degree Circular Audio Spectrum Ring */}
+        <CircularSpectrumCanvas
+          isPlaying={isPlaying}
+          primaryColor={themeColors.primary}
+          secondaryColor={themeColors.secondary}
+          size={360}
+        />
 
-            {/* Edit Box Mode */}
-            {isEditingLyrics ? (
-              <div className="w-full flex-1 flex flex-col space-y-2 z-20">
-                <textarea
-                  value={rawLyricsText}
-                  onChange={(e) => setRawLyricsText(e.target.value)}
-                  placeholder="Paste lyrics or LRC synced format here ([00:15.00] line...)"
-                  className="w-full flex-1 p-3 rounded-2xl bg-black/80 border border-white/15 text-white text-xs sm:text-sm font-serif focus:outline-none focus:border-amber-400 resize-none no-scrollbar"
-                />
-                <button
-                  onClick={handleSaveLyrics}
-                  className="self-end px-5 py-2 rounded-xl bg-amber-400 text-dark-950 font-black text-xs shadow-glow-brand hover:scale-105 active:scale-95 transition flex items-center gap-1.5"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Save Lyrics</span>
-                </button>
-              </div>
-            ) : (
-              /* Synchronized Scrolling Lyrics Inside Box */
-              <div
-                ref={lyricsContainerRef}
-                className="w-full flex-1 overflow-y-auto py-10 space-y-3 text-center no-scrollbar relative"
-              >
-                {lyricsLines.map((line, idx) => {
-                  const isActive = idx === activeIndex;
-                  const isPast = idx < activeIndex;
+        {/* Dynamic Atmospheric Ambient Aura Glow */}
+        <div
+          className="absolute w-72 h-72 sm:w-[420px] sm:h-[420px] rounded-full blur-3xl -z-10 animate-pulse-glow pointer-events-none transition-all duration-700"
+          style={{
+            background: `radial-gradient(circle, ${themeColors.glow} 0%, rgba(${themeColors.rgb}, 0.18) 60%, transparent 100%)`
+          }}
+        />
 
-                  return (
-                    <p
-                      key={idx}
-                      ref={isActive ? activeLyricRef : null}
-                      onClick={() => seek(line.time)}
-                      className={`cursor-pointer transition-all duration-500 font-serif select-none ${
-                        isActive
-                          ? 'text-xl sm:text-2xl md:text-3xl font-black scale-110 tracking-wide py-2.5 drop-shadow-[0_0_30px_rgba(229,169,60,0.95)]'
-                          : isPast
-                          ? 'text-xs sm:text-sm opacity-35 hover:opacity-75 text-slate-400 scale-90 py-0.5'
-                          : 'text-xs sm:text-sm opacity-40 hover:opacity-80 text-amber-100/60 scale-90 py-0.5'
-                      }`}
-                      style={{
-                        color: isActive ? themeColors.primary : undefined,
-                        textShadow: isActive ? `0 0 25px ${themeColors.glow}` : undefined
-                      }}
-                    >
-                      {line.text}
-                    </p>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        /* ================= 2. ARTWORK VISUALIZER STAGE ================= */
-        <div className="flex-1 flex flex-col items-center justify-center my-4 sm:my-6 relative select-none">
-          {/* Surrounding 360-Degree Circular Audio Spectrum Ring */}
-          <CircularSpectrumCanvas
-            isPlaying={isPlaying}
-            primaryColor={themeColors.primary}
-            secondaryColor={themeColors.secondary}
-            size={410}
-          />
-
-          {/* Dynamic Atmospheric Ambient Aura Glow */}
+        {/* Blast Particle Scatter Explosions on Touch */}
+        {isBlasted && blastParticles.map((p) => (
           <div
-            className="absolute w-80 h-80 sm:w-[460px] sm:h-[460px] rounded-full blur-3xl -z-10 animate-pulse-glow pointer-events-none transition-all duration-700"
+            key={p.id}
+            className="absolute rounded-2xl animate-blast-particle shadow-glow-brand pointer-events-none z-30"
             style={{
-              background: `radial-gradient(circle, ${themeColors.glow} 0%, rgba(${themeColors.rgb}, 0.18) 60%, transparent 100%)`
+              width: `${p.size}px`,
+              height: `${p.size}px`,
+              backgroundColor: p.color,
+              '--tx': p.tx,
+              '--ty': p.ty,
+              '--rot': p.rot
             }}
           />
+        ))}
 
-          {/* Blast Particle Scatter Explosions on Touch */}
-          {isBlasted && blastParticles.map((p) => (
-            <div
-              key={p.id}
-              className="absolute rounded-2xl animate-blast-particle shadow-glow-brand pointer-events-none z-30"
-              style={{
-                width: `${p.size}px`,
-                height: `${p.size}px`,
-                backgroundColor: p.color,
-                '--tx': p.tx,
-                '--ty': p.ty,
-                '--rot': p.rot
-              }}
-            />
-          ))}
+        {/* Interactive Artwork Plate with Beat Motion */}
+        <div
+          onPointerDown={triggerBlast}
+          onPointerUp={restoreFloat}
+          onPointerLeave={restoreFloat}
+          onTouchStart={triggerBlast}
+          onTouchEnd={restoreFloat}
+          className={`cursor-pointer transition-all duration-500 transform ${
+            isBlasted
+              ? 'scale-125 opacity-0 rotate-12 filter blur-md'
+              : isPlaying
+              ? artMode === '3d'
+                ? 'animate-3d-beat'
+                : 'animate-rhythm-bounce'
+              : 'animate-float'
+          }`}
+          title="Touch & hold to blast and scatter!"
+        >
+          {/* 3D Holographic Perspective Mode */}
+          {artMode === '3d' && (
+            <div className="relative w-56 h-56 sm:w-72 sm:h-72 md:w-80 md:h-80 rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] border-2 border-amber-400/40 group">
+              <ArtworkImage
+                src={currentSong.cover_path || currentSong.album_cover}
+                alt={currentSong.title}
+                fallbackTitle={currentSong.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-amber-200/20 pointer-events-none" />
+            </div>
+          )}
 
-          {/* Interactive Artwork Plate with Beat Motion */}
-          <div
-            onPointerDown={triggerBlast}
-            onPointerUp={restoreFloat}
-            onPointerLeave={restoreFloat}
-            onTouchStart={triggerBlast}
-            onTouchEnd={restoreFloat}
-            className={`cursor-pointer transition-all duration-500 transform ${
-              isBlasted
-                ? 'scale-125 opacity-0 rotate-12 filter blur-md'
-                : isPlaying
-                ? artMode === '3d'
-                  ? 'animate-3d-beat'
-                  : 'animate-rhythm-bounce'
-                : 'animate-float'
-            }`}
-            title="Touch & hold to blast and scatter!"
-          >
-            {/* 3D Holographic Perspective Mode */}
-            {artMode === '3d' && (
-              <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-92 md:h-92 rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] border-2 border-amber-400/40 group">
+          {/* Circular Rotating Vinyl Record Mode */}
+          {artMode === 'circle' && (
+            <div className="relative w-56 h-56 sm:w-72 sm:h-72 md:w-80 md:h-80 rounded-full overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] border-4 border-amber-500/50">
+              <div className={`w-full h-full rounded-full overflow-hidden relative ${isPlaying ? 'animate-spin-slow' : ''}`}>
                 <ArtworkImage
                   src={currentSong.cover_path || currentSong.album_cover}
                   alt={currentSong.title}
                   fallbackTitle={currentSong.title}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-amber-200/20 pointer-events-none" />
-              </div>
-            )}
-
-            {/* Circular Rotating Vinyl Record Mode */}
-            {artMode === 'circle' && (
-              <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-92 md:h-92 rounded-full overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] border-4 border-amber-500/50">
-                <div className={`w-full h-full rounded-full overflow-hidden relative ${isPlaying ? 'animate-spin-slow' : ''}`}>
-                  <ArtworkImage
-                    src={currentSong.cover_path || currentSong.album_cover}
-                    alt={currentSong.title}
-                    fallbackTitle={currentSong.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 rounded-full border-[12px] border-black/50 pointer-events-none">
-                    <div className="w-full h-full rounded-full border border-amber-300/30 flex items-center justify-center">
-                      <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-dark-950/90 border-2 border-amber-400/40 flex items-center justify-center shadow-2xl">
-                        <div className="w-6 h-6 rounded-full bg-amber-400/90 border-2 border-dark-950" />
-                      </div>
+                <div className="absolute inset-0 rounded-full border-[12px] border-black/50 pointer-events-none">
+                  <div className="w-full h-full rounded-full border border-amber-300/30 flex items-center justify-center">
+                    <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-dark-950/90 border-2 border-amber-400/40 flex items-center justify-center shadow-2xl">
+                      <div className="w-5 h-5 rounded-full bg-amber-400/90 border-2 border-dark-950" />
                     </div>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Floating Glass Card Mode */}
-            {artMode === 'float' && (
-              <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-92 md:h-92 rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] border-2 border-amber-400/30 group">
-                <ArtworkImage
-                  src={currentSong.cover_path || currentSong.album_cover}
-                  alt={currentSong.title}
-                  fallbackTitle={currentSong.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-              </div>
-            )}
-          </div>
+          {/* Floating Glass Card Mode */}
+          {artMode === 'float' && (
+            <div className="relative w-56 h-56 sm:w-72 sm:h-72 md:w-80 md:h-80 rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] border-2 border-amber-400/30 group">
+              <ArtworkImage
+                src={currentSong.cover_path || currentSong.album_cover}
+                alt={currentSong.title}
+                fallbackTitle={currentSong.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Track Details, Scrubber & Siri/Horizon Waveform Visualizer */}
-      <div className="max-w-md w-full mx-auto space-y-3.5">
-        {/* Track Title & Artist */}
+      {/* Track Details, Scrubber & Controls */}
+      <div className="max-w-md w-full mx-auto space-y-3">
+        {/* Track Title & Artist + Mic Symbol + Love Button */}
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-wide truncate font-serif">
@@ -405,7 +329,7 @@ export default function FullScreenPlayerModal() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Lyrics Symbol Button (Next to Love Heart) */}
+            {/* Lyrics Symbol Button (Mic2) */}
             <button
               onClick={() => setShowLyrics(prev => !prev)}
               className={`p-2.5 sm:p-3 rounded-full transition-all hover:scale-125 ${
@@ -413,20 +337,20 @@ export default function FullScreenPlayerModal() {
                   ? 'text-amber-400 fill-amber-400 bg-amber-500/25 ring-2 ring-amber-400/50 shadow-glow-brand'
                   : 'text-amber-200/60 hover:text-white bg-white/5'
               }`}
-              title={showLyrics ? 'Hide Lyrics' : 'Show Lyrics'}
+              title={showLyrics ? 'Hide Lyrics Card' : 'Show Lyrics Card'}
             >
               <Mic2 className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
-            {/* Heart / Like Button */}
+            {/* Heart / Favorite Button */}
             <button
               onClick={() => toggleLike(currentSong.id)}
               className={`p-2.5 sm:p-3 rounded-full transition-all hover:scale-125 ${
                 currentSong.is_liked
-                  ? 'text-rose-500 fill-rose-500 bg-rose-500/15'
+                  ? 'text-rose-500 fill-rose-500 bg-rose-500/20'
                   : 'text-amber-200/60 hover:text-white bg-white/5'
               }`}
-              title={currentSong.is_liked ? 'Remove from Liked' : 'Save to Liked'}
+              title={currentSong.is_liked ? 'Favorited' : 'Add to Favorites'}
             >
               <Heart className={`w-5 h-5 sm:w-6 sm:h-6 ${currentSong.is_liked ? 'fill-rose-500' : ''}`} />
             </button>
@@ -453,21 +377,21 @@ export default function FullScreenPlayerModal() {
         </div>
 
         {/* Futuristic Siri-Style Sine Wave or Horizon Visualizer */}
-        <div className="w-full h-14 overflow-hidden rounded-2xl bg-black/40 border border-white/10 p-1 flex items-center justify-center">
+        <div className="w-full h-12 overflow-hidden rounded-2xl bg-black/40 border border-white/10 p-1 flex items-center justify-center">
           {visualizerStyle === 'siri' ? (
             <SiriWaveCanvas
               isPlaying={isPlaying}
               primaryColor={themeColors.primary || '#ffffff'}
               secondaryColor={themeColors.secondary || '#38bdf8'}
               accentColor={themeColors.accent || '#c084fc'}
-              height={50}
+              height={44}
             />
           ) : (
             <HorizonSpectrumCanvas
               isPlaying={isPlaying}
               primaryColor={themeColors.primary}
               secondaryColor={themeColors.secondary}
-              height={44}
+              height={40}
             />
           )}
         </div>
@@ -493,16 +417,16 @@ export default function FullScreenPlayerModal() {
 
           <button
             onClick={togglePlay}
-            className="p-5 rounded-full text-dark-950 font-black shadow-2xl hover:scale-110 active:scale-95 transition"
+            className="p-4 sm:p-5 rounded-full text-dark-950 font-black shadow-2xl hover:scale-110 active:scale-95 transition"
             style={{
               background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.secondary})`,
               boxShadow: `0 10px 30px -5px ${themeColors.glow}`
             }}
           >
             {isPlaying ? (
-              <Pause className="w-8 h-8 fill-current" />
+              <Pause className="w-7 h-7 sm:w-8 sm:h-8 fill-current" />
             ) : (
-              <Play className="w-8 h-8 fill-current ml-1" />
+              <Play className="w-7 h-7 sm:w-8 sm:h-8 fill-current ml-1" />
             )}
           </button>
 
@@ -533,7 +457,7 @@ export default function FullScreenPlayerModal() {
         </div>
 
         {/* Volume & Speed Controls */}
-        <div className="flex items-center justify-between pt-2 border-t border-amber-500/20">
+        <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-2.5 w-1/2">
             <button onClick={toggleMute} className="text-amber-200/70 hover:text-white">
               {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -558,6 +482,54 @@ export default function FullScreenPlayerModal() {
           </button>
         </div>
       </div>
+
+      {/* ================= SPOTIFY / CANVA STYLE LYRICS CARD ================= */}
+      {showLyrics && (
+        <div className="max-w-md w-full mx-auto mt-4 rounded-3xl bg-black/70 backdrop-blur-2xl border border-white/15 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.85)] relative overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom duration-300">
+          {/* Card Header Label matching reference image */}
+          <div className="flex items-center justify-between pb-3 border-b border-white/10">
+            <span className="text-xs font-bold uppercase tracking-widest text-amber-300 flex items-center gap-1.5">
+              <Mic2 className="w-3.5 h-3.5" />
+              Lyrics
+            </span>
+            <span className="text-[10px] font-mono text-amber-200/60">
+              {currentSong.artist_name || '1UP Audio'}
+            </span>
+          </div>
+
+          {/* Synchronized Scrolling Lines inside Box */}
+          <div
+            ref={lyricsContainerRef}
+            className="h-56 overflow-y-auto py-6 space-y-2 text-center no-scrollbar relative"
+          >
+            {lyricsLines.map((line, idx) => {
+              const isActive = idx === activeIndex;
+              const isPast = idx < activeIndex;
+
+              return (
+                <p
+                  key={idx}
+                  ref={isActive ? activeLyricRef : null}
+                  onClick={() => seek(line.time)}
+                  className={`cursor-pointer transition-all duration-500 font-serif select-none ${
+                    isActive
+                      ? 'text-lg sm:text-xl md:text-2xl font-black scale-105 tracking-wide py-2 drop-shadow-[0_0_25px_rgba(229,169,60,0.95)]'
+                      : isPast
+                      ? 'text-xs sm:text-sm opacity-35 hover:opacity-75 text-slate-400 scale-90 py-0.5'
+                      : 'text-xs sm:text-sm opacity-40 hover:opacity-80 text-amber-100/60 scale-90 py-0.5'
+                  }`}
+                  style={{
+                    color: isActive ? themeColors.primary : undefined,
+                    textShadow: isActive ? `0 0 20px ${themeColors.glow}` : undefined
+                  }}
+                >
+                  {line.text}
+                </p>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
