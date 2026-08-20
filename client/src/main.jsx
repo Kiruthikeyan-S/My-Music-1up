@@ -6,8 +6,9 @@ import './index.css';
 // Register Offline PWA Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
       .then((reg) => {
+        reg.update();
         console.log('1UP Offline Service Worker active:', reg.scope);
       })
       .catch((err) => {

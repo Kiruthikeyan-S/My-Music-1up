@@ -1,91 +1,50 @@
 // 1UP Music Studio - Offline Service Worker
-const CACHE_NAME = '1up-music-v3-songdeck';
+const CACHE_NAME = '1up-music-v4-force-update';
 
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/logo.svg',
-  '/bg-horizon.jpg'
-];
-
-// Install: Cache core application shell
+// Install: Skip waiting immediately to activate fresh code
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch((err) => {
-        console.warn('Some static assets failed to precache:', err);
-      });
-    }).then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
 });
 
-// Activate: Clean up old caches
+// Activate: Delete ALL old caches so user gets the new UI immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
+      return Promise.all(keys.map((key) => caches.delete(key)));
     }).then(() => self.clients.claim())
   );
 });
 
-// Fetch: Stale-While-Revalidate & Offline Fallback for SPA routing
+// Fetch: Network-First strategy when online (so fresh UI is always served), Cache fallback when offline
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET and chrome-extension requests
   if (request.method !== 'GET' || url.protocol.startsWith('chrome-extension')) {
     return;
   }
 
-  // Handle SPA HTML navigations: Serve cached index.html when offline
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(async () => {
-        const cachedIndex = await caches.match('/index.html');
-        return cachedIndex || caches.match('/');
-      })
-    );
-    return;
-  }
-
-  // Cache-first for static assets (JS, CSS, Images, Fonts, Wallpapers)
+  // Network-First strategy
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch in background to update cache (Stale-While-Revalidate)
-        fetch(request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse));
-          }
-        }).catch(() => {});
-        return cachedResponse;
-      }
-
-      return fetch(request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
+    fetch(request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseToCache));
         }
-
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(request, responseToCache);
-        });
-
         return networkResponse;
-      }).catch(async () => {
-        // Fallback for sub-resources if offline
-        if (request.destination === 'image') {
-          return caches.match('/logo.svg');
+      })
+      .catch(async () => {
+        // Offline Fallback
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) return cachedResponse;
+
+        if (request.mode === 'navigate') {
+          const cachedIndex = await caches.match('/index.html');
+          if (cachedIndex) return cachedIndex;
         }
-      });
-    })
+
+        return new Response('Offline', { status: 503, statusText: 'Offline' });
+      })
   );
 });
