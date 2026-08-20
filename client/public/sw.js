@@ -1,5 +1,5 @@
 // 1UP Music Studio - Offline Service Worker
-const CACHE_NAME = '1up-music-v2';
+const CACHE_NAME = '1up-music-v3-songdeck';
 
 const STATIC_ASSETS = [
   '/',
