@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, ChevronLeft, ChevronRight, Sparkles, Volume2 } from 'lucide-react';
+import { Play, Pause, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import ArtworkImage from './ArtworkImage';
 
 export default function SongDeckCarousel({ songs, currentSong, isPlaying, onSelectSong, onTogglePlay }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [scrollAutoplay, setScrollAutoplay] = useState(true);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
@@ -28,26 +27,21 @@ export default function SongDeckCarousel({ songs, currentSong, isPlaying, onSele
     );
   }
 
+  // Next / Prev card navigation ONLY scrolls cards (No Autoplay)
   const handleNext = () => {
-    const nextIdx = (activeIndex + 1) % songs.length;
-    setActiveIndex(nextIdx);
-    if (scrollAutoplay && onSelectSong) {
-      onSelectSong(songs[nextIdx]);
-    }
+    setActiveIndex((prev) => (prev + 1) % songs.length);
   };
 
   const handlePrev = () => {
-    const prevIdx = (activeIndex - 1 + songs.length) % songs.length;
-    setActiveIndex(prevIdx);
-    if (scrollAutoplay && onSelectSong) {
-      onSelectSong(songs[prevIdx]);
-    }
+    setActiveIndex((prev) => (prev - 1 + songs.length) % songs.length);
   };
 
+  // Tapping a side card scrolls it to center without playing; tapping center active card plays
   const handleCardClick = (index) => {
-    setActiveIndex(index);
-    const targetSong = songs[index];
-    if (onSelectSong) {
+    if (index !== activeIndex) {
+      setActiveIndex(index);
+    } else {
+      const targetSong = songs[index];
       if (currentSong?.id === targetSong.id) {
         onTogglePlay();
       } else {
@@ -62,7 +56,7 @@ export default function SongDeckCarousel({ songs, currentSong, isPlaying, onSele
     if (e.key === 'ArrowRight') handleNext();
   };
 
-  // Touch Swipe Handlers
+  // Touch Swipe Handlers (Swipe to scroll only)
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -78,17 +72,17 @@ export default function SongDeckCarousel({ songs, currentSong, isPlaying, onSele
 
   return (
     <div
-      className="relative w-full max-w-7xl mx-auto py-6 sm:py-10 flex flex-col items-center select-none outline-none"
+      className="relative w-full max-w-7xl mx-auto py-4 sm:py-8 flex flex-col items-center select-none outline-none"
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Navigation Arrows */}
+      {/* Navigation Arrows (Scroll only) */}
       <button
         onClick={handlePrev}
         className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-40 p-3 rounded-full bg-black/60 hover:bg-black/80 border border-white/15 text-white shadow-2xl backdrop-blur-md hover:scale-110 active:scale-95 transition"
-        title="Previous Card (←)"
+        title="Scroll Left (←)"
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
@@ -96,7 +90,7 @@ export default function SongDeckCarousel({ songs, currentSong, isPlaying, onSele
       <button
         onClick={handleNext}
         className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-40 p-3 rounded-full bg-black/60 hover:bg-black/80 border border-white/15 text-white shadow-2xl backdrop-blur-md hover:scale-110 active:scale-95 transition"
-        title="Next Card (→)"
+        title="Scroll Right (→)"
       >
         <ChevronRight className="w-6 h-6" />
       </button>
@@ -106,7 +100,6 @@ export default function SongDeckCarousel({ songs, currentSong, isPlaying, onSele
         {songs.map((song, index) => {
           let offset = index - activeIndex;
 
-          // Wrap around calculations for smooth infinite loop display
           if (offset > Math.floor(songs.length / 2)) {
             offset -= songs.length;
           } else if (offset < -Math.floor(songs.length / 2)) {
@@ -117,17 +110,15 @@ export default function SongDeckCarousel({ songs, currentSong, isPlaying, onSele
           const isCurrentPlaying = currentSong?.id === song.id && isPlaying;
           const absOffset = Math.abs(offset);
 
-          // Hide cards that are too far away
           if (absOffset > 2 && songs.length > 5) {
             return null;
           }
 
-          // Dynamic 3D transform & style calculations
-          let translateX = offset * 260; // horizontal spacing
+          let translateX = offset * 260;
           let scale = 1 - absOffset * 0.12;
           let opacity = 1 - absOffset * 0.35;
           let zIndex = 30 - absOffset * 10;
-          let rotateY = offset * -15; // 3D rotation angle
+          let rotateY = offset * -15;
 
           if (window.innerWidth < 640) {
             translateX = offset * 180;
@@ -146,7 +137,7 @@ export default function SongDeckCarousel({ songs, currentSong, isPlaying, onSele
                 perspective: '1000px'
               }}
             >
-              {/* Card Container */}
+              {/* High-Res Album Art Cover Card */}
               <div
                 className={`relative w-[280px] sm:w-[340px] md:w-[380px] h-[360px] sm:h-[430px] rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border transition-all duration-500 group ${
                   isActive
@@ -154,7 +145,7 @@ export default function SongDeckCarousel({ songs, currentSong, isPlaying, onSele
                     : 'border-white/10 hover:border-white/30'
                 }`}
               >
-                {/* Full Card Cover Image */}
+                {/* Full Artwork Photo */}
                 <ArtworkImage
                   src={song.cover_path || song.album_cover}
                   alt={song.title}
@@ -165,7 +156,7 @@ export default function SongDeckCarousel({ songs, currentSong, isPlaying, onSele
                 {/* Dark Gradient Overlay at Bottom */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none" />
 
-                {/* Song Meta Text Overlay at Bottom Left */}
+                {/* Song Meta Text Overlay & Play Button */}
                 <div className="absolute bottom-0 inset-x-0 p-6 flex items-end justify-between z-20">
                   <div className="min-w-0 pr-3">
                     <p className="text-[11px] font-bold text-slate-300 uppercase tracking-widest font-mono truncate">
@@ -202,18 +193,6 @@ export default function SongDeckCarousel({ songs, currentSong, isPlaying, onSele
             </div>
           );
         })}
-      </div>
-
-      {/* Center Control Pill: Scroll Autoplay Toggle */}
-      <div className="mt-4 z-40">
-        <button
-          onClick={() => setScrollAutoplay(prev => !prev)}
-          className="px-4 py-2 rounded-full bg-black/80 backdrop-blur-md border border-white/15 text-white text-xs font-mono font-bold hover:bg-black transition flex items-center gap-2 shadow-xl hover:scale-105 active:scale-95"
-        >
-          <span className={`w-2.5 h-2.5 rounded-full ${scrollAutoplay ? 'bg-[#1ed760] animate-pulse' : 'bg-slate-500'}`} />
-          <span>Enable scroll autoplay</span>
-          <span className="text-[10px] text-slate-400 font-normal">one time only</span>
-        </button>
       </div>
     </div>
   );
