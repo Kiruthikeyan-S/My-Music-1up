@@ -1,21 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  UploadCloud,
-  FolderPlus,
   Play,
   Pause,
   Shuffle,
   Search,
-  Trash2,
-  Edit,
   Music,
   User,
   Disc,
-  Clock,
   Sparkles,
   Layers,
-  Radio,
-  SlidersHorizontal
+  LayoutGrid,
+  Plus,
+  Compass
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { songsAPI } from '../services/api';
@@ -23,6 +19,7 @@ import { useAudio } from '../context/AudioContext';
 import MetadataEditorModal from '../components/modals/MetadataEditorModal';
 import ImportProgressModal from '../components/modals/ImportProgressModal';
 import ArtworkImage from '../components/common/ArtworkImage';
+import SongDeckCarousel from '../components/common/SongDeckCarousel';
 import CassetteTapeCard from '../components/common/CassetteTapeCard';
 import { saveLocalSong, getLocalSongs, deleteLocalSong } from '../utils/indexedDbStorage';
 import { parseAudioFileMetadata } from '../utils/id3Extractor';
@@ -34,13 +31,11 @@ export default function Home() {
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('songs'); // 'songs' | 'albums' | 'artists'
-  const [sortBy, setSortBy] = useState('date'); // 'date' | 'title' | 'artist'
-  const [editingSong, setEditingSong] = useState(null);
+  const [viewMode, setViewMode] = useState('deck'); // 'deck' | 'grid' | 'albums' | 'artists'
+  const [sortBy, setSortBy] = useState('date');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const fileInputRef = useRef(null);
-  const folderInputRef = useRef(null);
 
   const fetchSongs = async () => {
     try {
@@ -86,9 +81,9 @@ export default function Home() {
         const newLocalSong = {
           id: `local_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
           title: meta.title || file.name.replace(/\.[^/.]+$/, ''),
-          artist_name: meta.artist || 'Local Tape Deck',
-          album_title: meta.album || 'Cassette Mixtape Vol. 1',
-          genre: meta.genre || 'Analog Tape',
+          artist_name: meta.artist || '1UP Track',
+          album_title: meta.album || 'SONG//DECK Vol. 1',
+          genre: meta.genre || 'Audio Deck',
           duration: meta.duration || 0,
           cover_path: meta.pictureDataUrl || '',
           album_cover: meta.pictureDataUrl || '',
@@ -105,7 +100,7 @@ export default function Home() {
 
   // Group songs into distinct Albums and Artists
   const albumsMap = songs.reduce((acc, song) => {
-    const albumName = song.album_title || 'Cassette Mixtape';
+    const albumName = song.album_title || 'SONG//DECK Collection';
     if (!acc[albumName]) {
       acc[albumName] = {
         title: albumName,
@@ -120,7 +115,7 @@ export default function Home() {
   const albumsList = Object.values(albumsMap);
 
   const artistsMap = songs.reduce((acc, song) => {
-    const artistName = song.artist_name || 'Studio Artist';
+    const artistName = song.artist_name || '1UP Artist';
     if (!acc[artistName]) {
       acc[artistName] = {
         name: artistName,
@@ -150,140 +145,110 @@ export default function Home() {
     });
 
   return (
-    <div className="space-y-8 font-serif pb-28">
-      {/* ================= VINTAGE TAPE DECK TOP CONSOLE ================= */}
-      <div className="bg-[#12100d]/95 backdrop-blur-xl border border-amber-500/25 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
-        {/* Top Header Bar with TAPE DECK Brand, Tabs & Vibe Knob */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-5 border-b border-white/10 pb-5">
-          {/* TAPE DECK Retro Logo */}
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xl sm:text-2xl font-black font-mono tracking-widest text-amber-400">
-                  TAPE
-                </span>
-                <span className="text-xl sm:text-2xl font-black font-mono tracking-widest text-white">
-                  DECK
-                </span>
-              </div>
-              <span className="text-[10px] font-mono tracking-widest text-amber-200/50 uppercase">
-                Stereo Cassette Library • TD-1UP
-              </span>
+    <div className="space-y-6 font-sans pb-32">
+
+      {/* ================= 1. SONG//DECK TOP HEADER BAR ================= */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-black/40 backdrop-blur-xl border border-white/10 p-4 sm:p-6 rounded-3xl shadow-2xl">
+        {/* Brand Logo & Subtitle */}
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-[#1ed760] flex items-center justify-center text-black font-black shadow-[0_0_20px_rgba(30,215,96,0.5)]">
+            <Music className="w-5 h-5 fill-black" />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide font-sans">
+                SONG<span className="text-emerald-400">//</span>DECK
+              </h1>
             </div>
+            <p className="text-[10px] font-mono font-bold tracking-widest text-slate-400 uppercase">
+              REAL 1UP TRACKS & VAULT
+            </p>
+          </div>
+        </div>
+
+        {/* View Switchers & Search */}
+        <div className="flex flex-wrap items-center justify-center gap-3 w-full md:w-auto">
+          {/* Search Input */}
+          <div className="relative w-full sm:w-64">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search track, artist..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 rounded-2xl bg-black/60 border border-white/15 text-white placeholder-slate-400 text-xs font-sans focus:outline-none focus:border-emerald-400 transition"
+            />
           </div>
 
-          {/* Navigation View Tabs (ALL TRACKS / ALBUMS / ARTISTS) */}
-          <div className="flex items-center gap-2 bg-black/60 p-1.5 rounded-2xl border border-white/10">
+          {/* Mode Switcher Pills */}
+          <div className="flex items-center gap-1.5 bg-black/70 p-1 rounded-2xl border border-white/10">
             <button
-              onClick={() => setViewMode('songs')}
-              className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 ${
-                viewMode === 'songs'
-                  ? 'bg-amber-400 text-dark-950 font-black shadow-glow-brand'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+              onClick={() => setViewMode('deck')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 ${
+                viewMode === 'deck'
+                  ? 'bg-emerald-400 text-black font-black shadow-glow-brand'
+                  : 'text-slate-300 hover:text-white'
               }`}
             >
-              <Music className="w-4 h-4" />
-              <span>ALL SONGS ({songs.length})</span>
+              <Compass className="w-3.5 h-3.5" />
+              <span>3D DECK</span>
+            </button>
+
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 ${
+                viewMode === 'grid'
+                  ? 'bg-emerald-400 text-black font-black shadow-glow-brand'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>GRID</span>
             </button>
 
             <button
               onClick={() => setViewMode('albums')}
-              className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 ${
                 viewMode === 'albums'
-                  ? 'bg-amber-400 text-dark-950 font-black shadow-glow-brand'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  ? 'bg-emerald-400 text-black font-black shadow-glow-brand'
+                  : 'text-slate-300 hover:text-white'
               }`}
             >
-              <Disc className="w-4 h-4" />
-              <span>ALBUMS ({albumsList.length})</span>
-            </button>
-
-            <button
-              onClick={() => setViewMode('artists')}
-              className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 ${
-                viewMode === 'artists'
-                  ? 'bg-amber-400 text-dark-950 font-black shadow-glow-brand'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <User className="w-4 h-4" />
-              <span>ARTISTS ({artistsList.length})</span>
+              <Disc className="w-3.5 h-3.5" />
+              <span>ALBUMS</span>
             </button>
           </div>
 
-          {/* Analog Rotary Mood Knob (Chill / Vibe) */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                if (filteredSongs.length > 0) {
-                  playSong(filteredSongs[0], filteredSongs, 0);
-                }
-              }}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-dark-950 font-mono font-black text-xs transition flex items-center gap-2 shadow-glow-brand hover:scale-105 active:scale-95"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span>PLAY ALL</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Search Bar & Sort Dropdown */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 text-amber-400/70 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search cassette title, artist, mixtape..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-black/60 border border-white/10 text-white placeholder-amber-200/30 text-xs sm:text-sm font-serif focus:outline-none focus:border-amber-400 transition"
-            />
-          </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <span className="text-xs font-mono text-amber-200/60 uppercase">SORT BY:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 rounded-xl bg-black/70 border border-white/15 text-xs font-mono text-amber-300 focus:outline-none focus:border-amber-400 cursor-pointer"
-            >
-              <option value="date">DATE ADDED</option>
-              <option value="title">TITLE (A-Z)</option>
-              <option value="artist">ARTIST (A-Z)</option>
-            </select>
-          </div>
+          {/* Upload Button */}
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="px-4 py-2 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-xs shadow-[0_0_20px_rgba(30,215,96,0.4)] hover:scale-105 active:scale-95 transition flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>Upload</span>
+          </button>
         </div>
       </div>
 
-      {/* ================= MAIN CONTENT VIEWS ================= */}
+      {/* ================= 2. MAIN CONTENT STAGE ================= */}
 
-      {/* 1. ALL SONGS (AUTHENTIC CASSETTE TAPE CARDS) */}
-      {viewMode === 'songs' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2 text-xs font-mono font-black text-amber-400 uppercase tracking-widest">
-              <span>▶ CASSETTE TAPES</span>
-              <span className="text-amber-200/40">({filteredSongs.length})</span>
-            </div>
-          </div>
+      {/* 3D CAROUSEL DECK VIEW (MATCHING REFERENCE IMAGE) */}
+      {viewMode === 'deck' && (
+        <SongDeckCarousel
+          songs={filteredSongs}
+          currentSong={currentSong}
+          isPlaying={isPlaying}
+          onSelectSong={(song) => playSong(song, filteredSongs)}
+          onTogglePlay={togglePlay}
+        />
+      )}
 
-          {loading ? (
-            <div className="py-20 text-center text-slate-400 font-mono text-sm">
-              Loading tape deck collection...
-            </div>
-          ) : filteredSongs.length === 0 ? (
-            <div className="py-20 text-center space-y-3 bg-black/40 rounded-3xl border border-white/10 p-8">
-              <Music className="w-12 h-12 text-amber-400/50 mx-auto animate-pulse" />
-              <h3 className="text-lg font-bold text-white">No Cassette Tapes Found</h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                Drop your audio files or click the Upload button to create your custom retro cassette library.
-              </p>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-5 py-2 rounded-xl bg-amber-400 text-dark-950 font-bold font-mono text-xs shadow-glow-brand transition hover:scale-105"
-              >
-                Insert Tape Files
-              </button>
+      {/* GRID VIEW */}
+      {viewMode === 'grid' && (
+        <div className="space-y-4 pt-2">
+          {filteredSongs.length === 0 ? (
+            <div className="py-20 text-center text-slate-400 font-sans text-sm">
+              No tracks found matching "{searchTerm}".
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -303,123 +268,42 @@ export default function Home() {
         </div>
       )}
 
-      {/* 2. ALBUMS / MIXTAPES (VINTAGE TAPE CASES) */}
+      {/* ALBUMS VIEW */}
       {viewMode === 'albums' && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 px-1 text-xs font-mono font-black text-amber-400 uppercase tracking-widest">
-            <span>💽 ALBUM BOX SETS & MIXTAPES</span>
-            <span className="text-amber-200/40">({albumsList.length})</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {albumsList.map((album, idx) => (
-              <div
-                key={idx}
-                onClick={() => {
-                  navigate(`/album/${encodeURIComponent(album.title)}`);
-                }}
-                className="group cursor-pointer rounded-3xl bg-[#14120f]/90 border border-white/10 hover:border-amber-400/60 p-4 transition-all duration-300 transform hover:-translate-y-2 shadow-2xl hover:shadow-[0_15px_35px_rgba(229,169,60,0.3)] space-y-3 select-none"
-              >
-                {/* Album Cover / J-Card Box Artwork */}
-                <div className="w-full aspect-square rounded-2xl overflow-hidden relative shadow-md border border-white/10 bg-black">
-                  <ArtworkImage
-                    src={album.cover}
-                    alt={album.title}
-                    fallbackTitle={album.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
-                    <span className="text-[10px] font-mono text-amber-300 font-bold">
-                      {album.songs.length} Tracks
-                    </span>
-                    <div className="w-10 h-10 rounded-full bg-amber-400 text-dark-950 flex items-center justify-center font-black shadow-xl">
-                      <Play className="w-5 h-5 fill-current ml-0.5" />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-bold text-white truncate font-serif group-hover:text-amber-300 transition">
-                    {album.title}
-                  </h3>
-                  <p className="text-xs text-slate-400 truncate mt-0.5 font-serif italic">
-                    {album.artist} • {album.songs.length} Tracks
-                  </p>
-                </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-2">
+          {albumsList.map((album, idx) => (
+            <div
+              key={idx}
+              onClick={() => navigate(`/album/${encodeURIComponent(album.title)}`)}
+              className="glass-card rounded-3xl p-4 border border-white/10 hover:border-emerald-400/50 transition cursor-pointer group shadow-xl"
+            >
+              <div className="aspect-square rounded-2xl overflow-hidden mb-3 relative shadow-md">
+                <ArtworkImage
+                  src={album.cover}
+                  alt={album.title}
+                  fallbackTitle={album.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
               </div>
-            ))}
-          </div>
+              <h3 className="text-base font-bold text-white truncate font-sans">{album.title}</h3>
+              <p className="text-xs text-slate-400 truncate mt-0.5">{album.artist} • {album.songs.length} Tracks</p>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* 3. ARTISTS (STUDIO ARTIST REELS) */}
-      {viewMode === 'artists' && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 px-1 text-xs font-mono font-black text-amber-400 uppercase tracking-widest">
-            <span>🎙️ STUDIO ARTISTS</span>
-            <span className="text-amber-200/40">({artistsList.length})</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {artistsList.map((artist, idx) => (
-              <div
-                key={idx}
-                onClick={() => {
-                  navigate(`/artist/${encodeURIComponent(artist.name)}`);
-                }}
-                className="group cursor-pointer rounded-3xl bg-[#14120f]/90 border border-white/10 hover:border-amber-400/60 p-4 transition-all duration-300 transform hover:-translate-y-2 shadow-2xl flex flex-col items-center text-center space-y-3 select-none"
-              >
-                {/* Circular Artist Avatar */}
-                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden relative shadow-xl border-2 border-amber-400/40 group-hover:border-amber-400 group-hover:scale-105 transition-all duration-500 bg-black">
-                  <ArtworkImage
-                    src={artist.cover}
-                    alt={artist.name}
-                    fallbackTitle={artist.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                <div className="w-full">
-                  <h3 className="text-sm font-bold text-white truncate font-serif group-hover:text-amber-300 transition">
-                    {artist.name}
-                  </h3>
-                  <p className="text-[11px] text-amber-200/60 font-mono mt-0.5">
-                    {artist.songs.length} {artist.songs.length === 1 ? 'Tape' : 'Tapes'}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Hidden File Upload Inputs */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        accept="audio/*"
-        className="hidden"
-        onChange={(e) => handleUploadFiles(e.target.files)}
-      />
-      <input
-        ref={folderInputRef}
-        type="file"
-        webkitdirectory="true"
-        directory="true"
-        multiple
-        className="hidden"
-        onChange={(e) => handleUploadFiles(e.target.files)}
-      />
-
-      {/* Metadata Editor Modal */}
-      {editingSong && (
-        <MetadataEditorModal
-          song={editingSong}
-          onClose={() => setEditingSong(null)}
-          onSave={fetchSongs}
+      {/* Import Modal */}
+      {isImportModalOpen && (
+        <ImportProgressModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={() => {
+            setIsImportModalOpen(false);
+            fetchSongs();
+          }}
         />
       )}
+
     </div>
   );
 }
